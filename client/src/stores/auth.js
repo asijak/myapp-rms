@@ -12,10 +12,28 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.user,
 
-    isAdmin: (state) => {
-      if (!state.user?.role) return false
-      const role = state.user.role
-      return typeof role === 'object' ? role.name === 'admin' : role === 'admin'
+    // ✅ Logic: Checks if the user has ANY role other than 'user'
+    isStaff: (state) => {
+      if (!state.user?.roles) return false
+      // Returns true if there is at least one role that is NOT 'user'
+      return state.user.roles.some((role) => role !== 'user')
+    },
+
+    // ✅ Helper to decide where the user belongs
+    dashboardRoute: (state) => {
+      if (!state.user) return '/auth/login'
+      // Use our new logic: Staff goes to Admin, everyone else to User
+      return state.isStaff ? '/admin/dashboard' : '/user/dashboard'
+    },
+
+    hasRole: (state) => (roleName) => {
+      if (!state.user?.roles) return false
+      return state.user.roles.includes(roleName)
+    },
+
+    primaryRole: (state) => {
+      if (!state.user?.roles || state.user.roles.length === 0) return 'Guest'
+      return state.user.roles[0]
     },
   },
 
@@ -28,19 +46,6 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
       } finally {
         this.initialized = true
-      }
-    },
-
-    async register(userData) {
-      this.loading = true
-      this.error = null
-      try {
-        await apiClient.post('/auth/register', userData)
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Registration failed'
-        throw err
-      } finally {
-        this.loading = false
       }
     },
 
@@ -75,17 +80,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    loginWithGoogle() {
-      window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`
-    },
-
     async logout() {
       try {
         await apiClient.post('/auth/logout')
       } finally {
         this.user = null
         this.initialized = true
-        window.location.href = '/auth/login'
+        window.location.href = '/'
       }
     },
   },

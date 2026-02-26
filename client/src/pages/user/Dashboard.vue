@@ -6,98 +6,99 @@ const authStore = useAuthStore();
 
 <template>
     <UserLayout>
-        <div class="welcome-card">
-            <div class="profile-header">
-                <img :src="authStore.user?.avatar || `https://ui-avatars.com/api/?name=${authStore.user?.username}`"
-                    class="large-avatar" />
-                <div class="profile-meta">
-                    <h1>{{ authStore.user?.username }}</h1>
-                    <p class="email-text">{{ authStore.user?.email }}</p>
-                    <span class="status-badge">Active Account</span>
+        <div class="bg-white border border-corp-border rounded-sm p-6 shadow-sm mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="relative">
+                        <img :src="authStore.user?.avatar || `https://ui-avatars.com/api/?name=${authStore.user?.username}`"
+                            class="w-16 h-16 rounded-full border-2 border-sky-100 shadow-sm" />
+                        <div
+                            class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <h1 class="text-xl font-bold text-slate-800 tracking-tight">
+                            Welcome back, {{ authStore.user?.username }}
+                        </h1>
+                        <p class="text-sm text-slate-500 font-inter">{{ authStore.user?.email }}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span
+                                class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded border border-emerald-100">
+                                Verified Applicant
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium">Member since 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <Button label="Edit Profile" icon="pi pi-user-edit" size="small" variant="outlined"
+                        severity="secondary" class="!text-xs" />
+                    <Button label="View Vacancies" icon="pi pi-briefcase" size="small" class="!text-xs" />
                 </div>
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-box">
-                <h3>Application Status</h3>
-                <p class="stat-value">Under Review</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="stat-card">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-8 h-8 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
+                        <i class="pi pi-clock text-sm"></i>
+                    </div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Application Status</h3>
+                </div>
+                <p class="text-lg font-bold text-slate-800 font-roboto">Under Review</p>
+                <p class="text-xs text-slate-400 mt-1">Last updated 2 hours ago</p>
             </div>
-            <div class="stat-box">
-                <h3>PRIME-HRM Level</h3>
-                <p class="stat-value">Level 2 Compliant</p>
+
+            <div class="stat-card">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-8 h-8 rounded bg-purple-50 text-purple-600 flex items-center justify-center">
+                        <i class="pi pi-verified text-sm"></i>
+                    </div>
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">PRIME-HRM Level</h3>
+                </div>
+                <p class="text-lg font-bold text-slate-800 font-roboto">Level 2 Compliant</p>
+                <p class="text-xs text-slate-400 mt-1">Division Office Certification</p>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <i class="pi pi-chart-bar text-sm"></i>
+                        </div>
+                        <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Profile Strength</h3>
+                    </div>
+                    <span class="text-xs font-bold text-amber-600">85%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-amber-500 h-full w-[85%] rounded-full"></div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Add work experience to reach 100%</p>
             </div>
         </div>
     </UserLayout>
 </template>
 
 <style scoped>
-.welcome-card {
-    background: white;
-    padding: 3rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #f1f5f9;
+@reference "@/assets/main.css";
+
+.font-inter {
+    font-family: 'Inter', sans-serif;
 }
 
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
+.font-roboto {
+    font-family: 'Roboto', sans-serif;
 }
 
-.large-avatar {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 4px solid #38bdf8;
+.stat-card {
+    @apply bg-white p-5 border border-corp-border rounded-sm shadow-sm hover:shadow-md transition-shadow;
 }
 
-.profile-meta h1 {
-    font-size: 2rem;
-    margin: 0;
-    color: #0f172a;
-}
-
-.email-text {
-    font-size: 1.1rem;
-    color: #64748b;
-    margin: 0.5rem 0;
-}
-
-.status-badge {
-    background: #dcfce7;
-    color: #166534;
-    padding: 4px 12px;
-    border-radius: 99px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-.stat-box {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border-left: 5px solid #38bdf8;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.stat-box h3 {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-}
-
-.stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1e293b;
+/* Ensure PrimeVue buttons match our compact scale */
+:deep(.p-button) {
+    @apply !py-1.5 !px-3;
 }
 </style>

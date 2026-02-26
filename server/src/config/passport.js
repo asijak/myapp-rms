@@ -18,11 +18,10 @@ passport.use(
       try {
         const email = profile.emails[0].value;
 
-        // 1. Find user by email
-        let user = await User.findOne({ email }).populate("role");
+        // 1. Find user by email - ✅ Changed to .populate("roles")
+        let user = await User.findOne({ email }).populate("roles");
 
         if (user) {
-          // Link Google ID if it's the first time this manual user uses Google Login
           if (!user.googleId) {
             user.googleId = profile.id;
             user.isVerified = true;
@@ -31,40 +30,41 @@ passport.use(
           return done(null, user);
         }
 
-        // 2. If new user, get default role
+        // 2. Get default role
         const defaultRole = await Role.findOne({ name: "user" });
 
-        // 3. Create user
+        // 3. Create user - ✅ Changed 'role' to 'roles' array
         const newUser = await User.create({
           username: profile.displayName,
           email: email,
           googleId: profile.id,
           avatar: profile.photos[0]?.value,
           isVerified: true,
-          role: defaultRole ? defaultRole._id : null,
+          roles: defaultRole ? [defaultRole._id] : [],
         });
 
-        // 4. Ensure role is populated before finishing
-        const populatedUser = await User.findById(newUser._id).populate("role");
+        // 4. ✅ Changed to .populate("roles")
+        const populatedUser = await User.findById(newUser._id).populate(
+          "roles",
+        );
 
         return done(null, populatedUser);
       } catch (error) {
         console.error("💥 Google Strategy Error:", error);
-        return done(error, null); // Passes error to Passport's internal handler
+        return done(error, null);
       }
     },
   ),
 );
 
-// Stores the user ID in the session
 passport.serializeUser((user, done) => {
   done(null, user._id || user.id);
 });
 
-// Retrieves the full user from the DB based on the ID in the session
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findById(id).populate("role");
+    // 5. ✅ Changed to .populate("roles")
+    const user = await User.findById(id).populate("roles");
     if (!user) {
       return done(null, false);
     }

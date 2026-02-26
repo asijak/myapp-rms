@@ -9,9 +9,15 @@ export const registerUserLogic = async (userData) => {
 
   const defaultRole = await Role.findOne({ name: "user" });
 
+  if (!defaultRole) {
+    throw new Error(
+      "Default system role 'user' not found. Please run the seed script.",
+    );
+  }
+
   const user = await User.create({
     ...userData,
-    role: defaultRole ? defaultRole._id : null,
+    roles: [defaultRole._id],
     otp: { code: hashedOtp, expiresAt },
   });
 
@@ -25,7 +31,7 @@ export const verifyOTPLogic = async (email, otp) => {
     email,
     "otp.code": hashedOtp,
     "otp.expiresAt": { $gt: Date.now() },
-  }).populate("role");
+  }).populate("roles");
 
   if (!user) throw new Error("Invalid or expired OTP");
 
@@ -36,10 +42,9 @@ export const verifyOTPLogic = async (email, otp) => {
 };
 
 export const loginUserLogic = async (email, password) => {
-  // 🛡️ FIX: Added .select("+password") because your model hides it by default
   const user = await User.findOne({ email })
     .select("+password")
-    .populate("role");
+    .populate("roles");
 
   if (!user) throw new Error("Invalid email or password");
 

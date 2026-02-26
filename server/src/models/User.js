@@ -9,7 +9,12 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String, unique: true, sparse: true },
     avatar: { type: String },
     isVerified: { type: Boolean, default: false },
-    role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
+    roles: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role",
+      },
+    ],
     otp: { code: String, expiresAt: Date },
   },
   { timestamps: true },

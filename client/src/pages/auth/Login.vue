@@ -17,16 +17,12 @@ const handleLogin = async () => {
     try {
         await authStore.login(form.value);
 
-        // Check if role is an object or a string
-        const roleData = authStore.user?.role;
-        const roleName = typeof roleData === 'object' ? roleData.name : roleData;
+        // ✅ Use the smart getter we just created
+        const defaultDash = authStore.dashboardRoute;
 
-        const defaultDash = roleName === 'admin' ? '/admin/dashboard' : '/user/dashboard';
         const redirectPath = route.query.redirect || defaultDash;
-
         router.push(redirectPath);
     } catch (err) {
-        // Handle cases where err.response might be undefined
         error.value = typeof err === 'string' ? err : (err.response?.data?.message || 'Login failed');
     } finally {
         loading.value = false;
@@ -34,180 +30,87 @@ const handleLogin = async () => {
 };
 
 const handleGoogleLogin = () => {
-    // It's good practice to pass the current redirect path to the backend 
-    // so the backend can return the user to the same spot after Google auth
-    const redirect = route.query.redirect ? `?returnTo=${route.query.redirect}` : '';
-    window.location.href = `http://localhost:4000/api/auth/google${redirect}`;
+    // 1. Get base URL from env with a hardcoded fallback to port 4000
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace(/\/$/, "");
+
+    // 2. The path to the backend passport route
+    const finalUrl = `${baseUrl}/auth/google`;
+
+    console.log("🚀 Redirecting to Google Auth:", finalUrl);
+
+    // 3. Full page redirect (Required for Passport.js)
+    window.location.href = finalUrl;
 };
 </script>
 
 <template>
-    <div class="auth-container">
-        <div class="auth-card">
-            <header>
-                <h2>Sign In</h2>
-                <p>Access the DepEd GNC Recruitment Portal</p>
-            </header>
-
-            <form @submit.prevent="handleLogin" class="auth-form">
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input v-model="form.email" type="email" placeholder="name@example.com" required />
+    <div class="min-h-screen grid place-items-center bg-slate-50 px-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+            <div class="mb-6 text-center">
+                <div class="mx-auto mb-3 w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500
+                 flex items-center justify-center shadow">
+                    <i class="pi pi-send text-white text-sm"></i>
                 </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input v-model="form.password" type="password" placeholder="••••••••" required />
+                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                    Sign in
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Access the DepEd GNC Recruitment Portal
+                </p>
+            </div>
+
+            <form @submit.prevent="handleLogin" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Email address
+                    </label>
+                    <InputText v-model="form.email" type="email" placeholder="name@example.com"
+                        class="w-full !rounded-xl !py-2.5 !px-3" required />
                 </div>
 
-                <p v-if="error" class="error-text">{{ error }}</p>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Password
+                    </label>
+                    <Password v-model="form.password" :feedback="false" toggleMask placeholder="••••••••" class="w-full"
+                        inputClass="w-full !rounded-xl !py-2.5 !px-3" required />
+                </div>
 
-                <button type="submit" class="btn-submit" :disabled="loading">
-                    {{ loading ? 'Authenticating...' : 'Sign In' }}
-                </button>
+                <Message v-if="error" severity="error" class="!text-xs">
+                    {{ error }}
+                </Message>
+
+                <Button type="submit" :loading="loading" label="Sign in" icon="pi pi-sign-in"
+                    class="w-full !rounded-xl !py-2.5" />
             </form>
 
-            <div class="divider"><span>OR</span></div>
+            <div class="flex items-center gap-3 my-5">
+                <div class="h-px bg-slate-200 flex-1"></div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    OR
+                </span>
+                <div class="h-px bg-slate-200 flex-1"></div>
+            </div>
 
-            <button @click="handleGoogleLogin" class="btn-google">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" alt="G" />
-                Continue with Google
-            </button>
+            <Button @click="handleGoogleLogin" outlined
+                class="w-full !rounded-xl !py-2.5 flex items-center justify-center gap-2">
+                <i class="pi pi-google w-4 h-4"></i>
+                Continue with Gmail
+            </Button>
 
-            <footer class="auth-footer">
-                <span>New to ORAS?</span>
-                <router-link to="/auth/register">Create an Account</router-link>
-            </footer>
+            <div class="mt-6 text-center text-xs text-slate-500">
+                New to ORAS?
+                <router-link to="/auth/register" class="font-bold text-sky-600 hover:underline">
+                    Create an account
+                </router-link>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-/* Standard Auth Styles */
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f1f5f9;
-    padding: 2rem;
-}
-
-.auth-card {
-    background: white;
-    padding: 2.5rem;
-    border-radius: 16px;
+/* PrimeVue overrides usually go here if needed */
+:deep(.p-password-input) {
     width: 100%;
-    max-width: 400px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-h2 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 0.5rem;
-}
-
-p {
-    color: #64748b;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-    text-align: left;
-}
-
-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    color: #475569;
-}
-
-input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    transition: 0.2s;
-}
-
-input:focus {
-    border-color: #38bdf8;
-    outline: none;
-    ring: 2px solid #38bdf8;
-}
-
-.btn-submit {
-    width: 100%;
-    background: #0f172a;
-    color: white;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    margin-top: 1rem;
-}
-
-.btn-google {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    padding: 11px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-}
-
-.divider {
-    margin: 1.5rem 0;
-    position: relative;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #94a3b8;
-}
-
-.divider::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background: #e2e8f0;
-}
-
-.divider span {
-    position: relative;
-    background: white;
-    padding: 0 10px;
-}
-
-.auth-footer {
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.auth-footer a {
-    color: #38bdf8;
-    font-weight: 700;
-    text-decoration: none;
-    margin-left: 5px;
-}
-
-.error-text {
-    color: #dc2626;
-    font-size: 0.8rem;
-    margin-top: 0.5rem;
 }
 </style>

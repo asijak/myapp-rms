@@ -32,15 +32,17 @@ export const register = async (req, res, next) => {
 export const verifyOTP = async (req, res, next) => {
   try {
     const user = await authService.verifyOTPLogic(req.body.email, req.body.otp);
-    sendTokenCookie(res, user);
+    const populatedUser = await User.findById(user._id).populate("roles");
+
+    sendTokenCookie(res, populatedUser);
     res.status(200).json({
       message: "Success",
       user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
+        id: populatedUser._id,
+        username: populatedUser.username,
+        email: populatedUser.email,
+        roles: populatedUser.roles.map((r) => r.name),
+        avatar: populatedUser.avatar,
       },
     });
   } catch (error) {
@@ -53,16 +55,22 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
     const user = await authService.loginUserLogic(email, password);
     sendTokenCookie(res, user);
+
     res.status(200).json({
       message: "Login successful",
-      user: { username: user.username, role: user.role?.name },
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        roles: user.roles.map((r) => r.name),
+        avatar: user.avatar,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// ✅ FIXED: Added 'next' and try/catch
 export const googleAuthCallback = (req, res, next) => {
   try {
     if (!req.user) {
@@ -73,9 +81,12 @@ export const googleAuthCallback = (req, res, next) => {
 
     sendTokenCookie(res, req.user);
 
-    // Safety check for role names
-    const role = req.user.role?.name === "admin" ? "admin" : "user";
-    res.redirect(`${process.env.CLIENT_URL}/${role}/dashboard`);
+    const roleNames = req.user.roles.map((r) => r.name);
+    const redirectTarget = roleNames.some((name) => name !== "user")
+      ? "admin"
+      : "user";
+
+    res.redirect(`${process.env.CLIENT_URL}/${redirectTarget}/dashboard`);
   } catch (error) {
     next(error);
   }
@@ -93,7 +104,7 @@ export const getMe = async (req, res, next) => {
         id: req.user._id,
         username: req.user.username,
         email: req.user.email,
-        role: req.user.role,
+        roles: req.user.roles.map((r) => r.name),
         avatar: req.user.avatar,
       },
     });
@@ -102,7 +113,6 @@ export const getMe = async (req, res, next) => {
   }
 };
 
-// ✅ FIXED: Added 'next'
 export const logout = (req, res, next) => {
   try {
     res.cookie("token", "loggedout", {
@@ -122,9 +132,18 @@ export const updateMe = async (req, res, next) => {
       req.user._id,
       { username },
       { new: true, runValidators: true },
-    ).populate("role");
+    ).populate("roles");
 
-    res.status(200).json({ status: "success", user: updatedUser });
+    res.status(200).json({
+      status: "success",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        roles: updatedUser.roles.map((r) => r.name),
+        avatar: updatedUser.avatar,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -133,13 +152,15 @@ export const updateMe = async (req, res, next) => {
 export const updatePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
     const user = await User.findById(req.user._id).select("+password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (!(await user.comparePassword(currentPassword, user.password))) {
+    const isMatch = await user.comparePassword(currentPassword, user.password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Current password is incorrect" });
     }
 

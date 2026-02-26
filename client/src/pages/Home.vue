@@ -5,20 +5,21 @@ import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const loggedOutMessage = ref(false);
 
 const currentSlide = ref(0);
 const slides = [
     {
-        title: "Welcome to RSP Portal",
-        subtitle: "Online Recruitment & Application System",
-        description: "DepEd Guihulngan City Division's gateway to excellence in human resource management.",
-        image: "https://images.unsplash.com/photo-1523050335392-9bef867a0578?auto=format&fit=crop&q=80&w=1920"
+        title: "RSP Management Portal",
+        subtitle: "Division of Guihulngan City",
+        description: "Access the Online Recruitment and Selection system for modern human resource management.",
+        image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200"
     },
     {
-        title: "PRIME-HRM Compliant",
-        subtitle: "Excellence in Human Resource",
-        description: "Experience a transparent, merit-based selection process tailored for the modern educator.",
-        image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920"
+        title: "PRIME-HRM Excellence",
+        subtitle: "Merit-Based Selection",
+        description: "A transparent and standardized process for the recruitment of educators and staff.",
+        image: "https://images.unsplash.com/photo-1523050335392-9bef867a0578?auto=format&fit=crop&q=80&w=1200"
     }
 ];
 
@@ -26,335 +27,113 @@ const nextSlide = () => {
     currentSlide.value = (currentSlide.value + 1) % slides.length;
 };
 
-onMounted(async () => {
-    await authStore.fetchCurrentUser();
-    setInterval(nextSlide, 6000);
+const handleLogout = async () => {
+    await authStore.logout();
+    loggedOutMessage.value = true;
+    setTimeout(() => loggedOutMessage.value = false, 3000);
+};
+
+onMounted(() => {
+    setInterval(nextSlide, 8000);
 });
 </script>
 
 <template>
-    <div class="landing-container">
-        <nav class="navbar">
-            <div class="logo">RSP | DepEd GNC</div>
-
-            <div class="nav-actions">
-                <div v-if="authStore.isAuthenticated" class="user-profile-nav">
-                    <span class="username">{{ authStore.user.username }}</span>
-                    <img :src="authStore.user.avatar || 'https://ui-avatars.com/api/?name=' + authStore.user.username"
-                        alt="Profile" class="nav-avatar" />
-                    <button @click="authStore.logout()" class="btn-nav-logout">Logout</button>
+    <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <nav class="h-16 border-b border-slate-200 bg-white sticky top-0 z-50 px-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <Avatar label="R" class="bg-blue-600 text-white font-bold rounded-lg" size="normal" />
+                <div class="flex flex-col leading-tight">
+                    <span class="text-sm font-bold text-slate-900">RSP Portal</span>
+                    <span class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">DepEd GNC</span>
                 </div>
+            </div>
 
-                <button v-else @click="router.push('/auth/login')" class="btn-nav-login">Sign In</button>
+            <div class="flex items-center gap-2">
+                <template v-if="authStore.isAuthenticated">
+                    <Chip :label="authStore.user.username"
+                        :image="authStore.user.avatar || 'https://ui-avatars.com/api/?name=' + authStore.user.username"
+                        class="bg-slate-100 font-medium text-sm" />
+                    <Button icon="pi pi-sign-out" severity="secondary" variant="text" rounded @click="handleLogout" />
+                </template>
+                <Button v-else label="Sign In" variant="text" class="text-blue-600 font-bold"
+                    @click="router.push('/auth/login')" />
             </div>
         </nav>
 
-        <header class="hero"
-            :style="{ backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${slides[currentSlide].image})` }">
+        <main
+            class="flex-1 grid grid-cols-1 lg:grid-cols-2 max-w-7xl mx-auto w-full items-center px-6 lg:px-12 py-12 gap-12">
 
-            <div class="hero-content">
-                <transition name="fade" mode="out-in">
-                    <div :key="currentSlide" class="slide-text">
-                        <span class="badge">{{ slides[currentSlide].subtitle }}</span>
-                        <h1>{{ slides[currentSlide].title }}</h1>
-                        <p>{{ slides[currentSlide].description }}</p>
+            <div class="space-y-6">
+                <transition name="p-message" mode="out-in">
+                    <div :key="currentSlide">
+                        <span class="text-blue-600 text-xs font-black uppercase tracking-[0.2em]">
+                            {{ slides[currentSlide].subtitle }}
+                        </span>
+                        <h1 class="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] mt-4 mb-6">
+                            {{ slides[currentSlide].title }}
+                        </h1>
+                        <p class="text-slate-600 text-lg max-w-md leading-relaxed">
+                            {{ slides[currentSlide].description }}
+                        </p>
                     </div>
                 </transition>
 
-                <div class="cta-group">
-                    <template v-if="authStore.isAuthenticated">
-                        <button @click="router.push(authStore.isAdmin ? '/admin/dashboard' : '/user/dashboard')"
-                            class="btn-primary">
-                            Go to Dashboard
-                        </button>
-                    </template>
+                <div class="flex flex-wrap gap-4 pt-4">
+                    <Button v-if="!authStore.isAuthenticated" label="Get Started" icon="pi pi-arrow-right"
+                        iconPos="right" class="p-button-rounded bg-blue-600 border-none px-8"
+                        @click="router.push('/auth/login')" />
 
-                    <template v-else>
-                        <button @click="router.push('/auth/login')" class="btn-primary">Get Started</button>
-                    </template>
+                    <Button v-else label="Open Dashboard" icon="pi pi-th-large"
+                        class="p-button-rounded bg-blue-600 border-none px-8"
+                        @click="router.push(authStore.dashboardRoute)" />
 
-                    <button class="btn-secondary">View Vacancies</button>
+                    <Button label="View Vacancies" severity="secondary" outlined
+                        class="p-button-rounded border-slate-300 text-slate-700 px-8" />
                 </div>
             </div>
 
-            <div class="indicators">
-                <span v-for="(_, i) in slides" :key="i" :class="{ active: i === currentSlide }"
-                    @click="currentSlide = i"></span>
+            <div class="hidden lg:block h-[500px] relative group">
+                <div
+                    class="absolute inset-0 bg-blue-600/5 rounded-[40px] -rotate-3 transition-transform group-hover:rotate-0">
+                </div>
+                <div class="relative h-full w-full rounded-[40px] overflow-hidden shadow-2xl shadow-blue-900/10">
+                    <img :src="slides[currentSlide].image"
+                        class="w-full h-full object-cover transition-opacity duration-1000"
+                        :class="{ 'opacity-100': true }" />
+
+                    <div class="absolute bottom-8 left-8 flex gap-2">
+                        <div v-for="(_, i) in slides" :key="i" @click="currentSlide = i"
+                            class="h-1.5 rounded-full transition-all duration-300 cursor-pointer"
+                            :class="i === currentSlide ? 'w-8 bg-white' : 'w-2 bg-white/40'">
+                        </div>
+                    </div>
+                </div>
             </div>
-        </header>
+        </main>
+
+        <transition name="p-message">
+            <div v-if="loggedOutMessage" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100]">
+                <Message severity="success" icon="pi pi-check-circle">Logged out successfully</Message>
+            </div>
+        </transition>
     </div>
 </template>
 
 <style scoped>
-.landing-container {
-    min-height: 100vh;
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
-}
-
-.navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    box-sizing: border-box;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 4rem;
-    z-index: 100;
-    color: white;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+/* Refined M3 Transitions */
+.p-message-enter-active,
+.p-message-leave-active {
     transition: all 0.3s ease;
 }
 
-.logo {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-}
-
-.user-profile-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 5px 15px;
-    border-radius: 50px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #38bdf8;
-}
-
-.username {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.hero {
-    height: 100vh;
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: background-image 1s ease-in-out;
-}
-
-.hero-content {
-    max-width: 800px;
-    padding: 0 2rem;
-    color: white;
-    width: 100%;
-}
-
-.badge {
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 0.8rem;
-    background: #38bdf8;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-weight: 700;
-}
-
-h1 {
-    font-size: 4rem;
-    margin: 1.5rem 0;
-    font-weight: 900;
-    line-height: 1.1;
-}
-
-p {
-    font-size: 1.25rem;
-    opacity: 0.9;
-    margin-bottom: 2.5rem;
-    line-height: 1.6;
-}
-
-.cta-group {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.btn-primary,
-.btn-secondary {
-    padding: 1rem 2.5rem;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.3s;
-    font-size: 1rem;
-}
-
-.btn-primary {
-    background: white;
-    color: #0f172a;
-    border: none;
-}
-
-.btn-primary:hover {
-    background: #38bdf8;
-    color: white;
-}
-
-.btn-secondary {
-    background: transparent;
-    color: white;
-    border: 2px solid white;
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.btn-nav-login,
-.btn-nav-logout {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    padding: 0.5rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-    font-size: 0.85rem;
-    transition: 0.3s;
-}
-
-.btn-nav-logout:hover {
-    background: #ef4444;
-    border-color: #ef4444;
-}
-
-.indicators {
-    position: absolute;
-    bottom: 2rem;
-    display: flex;
-    gap: 10px;
-}
-
-.indicators span {
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    border-radius: 2px;
-    transition: 0.3s;
-}
-
-.indicators span.active {
-    background: #38bdf8;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: all 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
+.p-message-enter-from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate(-50%, 20px);
 }
 
-/* ======================== 
-   RESPONSIVE QUERIES 
-   ======================== */
-
-/* Laptops / Smaller Desktops */
-@media screen and (max-width: 1024px) {
-    .navbar {
-        padding: 1.2rem 2.5rem;
-    }
-
-    h1 {
-        font-size: 3.2rem;
-    }
-
-    p {
-        font-size: 1.15rem;
-    }
-}
-
-/* Tablets */
-@media screen and (max-width: 768px) {
-    .navbar {
-        padding: 1rem 1.5rem;
-    }
-
-    .logo {
-        font-size: 1.25rem;
-    }
-
-    h1 {
-        font-size: 2.5rem;
-    }
-
-    p {
-        font-size: 1.05rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Save space in the navbar on tablets */
-    .username {
-        display: none;
-    }
-
-    .user-profile-nav {
-        padding: 4px 8px;
-    }
-
-    /* Stack buttons for better touch targets */
-    .cta-group {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-        width: 100%;
-        max-width: 350px;
-    }
-}
-
-/* Mobile Phones */
-@media screen and (max-width: 480px) {
-    .navbar {
-        padding: 0.8rem 1rem;
-    }
-
-    .logo {
-        font-size: 1.1rem;
-    }
-
-    h1 {
-        font-size: 2rem;
-    }
-
-    p {
-        font-size: 0.95rem;
-    }
-
-    .badge {
-        font-size: 0.7rem;
-        padding: 4px 8px;
-    }
-
-    .btn-nav-login,
-    .btn-nav-logout {
-        padding: 0.4rem 1rem;
-        font-size: 0.8rem;
-    }
+.p-message-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 20px);
 }
 </style>

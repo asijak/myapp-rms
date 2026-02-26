@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth' // 👈 Must import store here
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
@@ -26,7 +26,7 @@ const routes = [
   {
     path: '/user/dashboard',
     component: () => import('@/pages/user/Dashboard.vue'),
-    meta: { requiresAuth: true, role: 'user' }, // 👈 Added meta tags
+    meta: { requiresAuth: true, role: 'user' },
   },
 
   // Admin Role Group
@@ -34,6 +34,10 @@ const routes = [
     path: '/admin/dashboard',
     component: () => import('@/pages/admin/Dashboard.vue'),
     meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
   },
 ]
 
@@ -50,26 +54,28 @@ router.beforeEach(async (to) => {
     await authStore.fetchCurrentUser()
   }
 
-  const isLoggedIn = !!authStore.user
+  const isLoggedIn = authStore.isAuthenticated
 
-  // ✅ FIX: Handle both object and string structures
-  const userRole =
-    typeof authStore.user?.role === 'object' ? authStore.user.role.name : authStore.user?.role
-
-  // 1. Redirect logged-in users away from Auth pages
+  // If already logged in, don't let them see /auth pages
   if (isLoggedIn && to.path.startsWith('/auth')) {
-    return userRole === 'admin' ? '/admin/dashboard' : '/user/dashboard'
+    return authStore.dashboardRoute
   }
 
-  // 2. Protect routes requiring authentication
+  // Auth requirement
   if (to.meta.requiresAuth && !isLoggedIn) {
     return { path: '/auth/login', query: { redirect: to.fullPath } }
   }
 
-  // 3. Role-based Access Control
-  if (to.meta.role && to.meta.role !== userRole) {
-    console.warn(`Access Denied: Required ${to.meta.role}, but user is ${userRole}`)
-    return '/'
+  // Role protection
+  if (to.meta.role) {
+    // If route needs 'admin' but user is NOT staff
+    if (to.meta.role === 'admin' && !authStore.isStaff) {
+      return '/user/dashboard'
+    }
+    // If route needs 'user' but user is NOT even a 'user'
+    if (to.meta.role === 'user' && !authStore.hasRole('user')) {
+      return authStore.dashboardRoute
+    }
   }
 })
 

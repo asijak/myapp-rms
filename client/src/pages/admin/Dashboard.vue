@@ -2,178 +2,113 @@
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { ref } from 'vue';
 
-// Mock data for the dashboard
 const stats = ref([
-    { label: 'Total Applicants', value: '1,248', color: '#38bdf8' },
-    { label: 'Pending Reviews', value: '42', color: '#fbbf24' },
-    { label: 'Active Job Posts', value: '15', color: '#22c55e' },
-    { label: 'Reports Generated', value: '89', color: '#818cf8' }
+    { label: 'Total Applicants', value: '1,248', icon: 'pi-users', color: 'text-sky-600', bg: 'bg-sky-50' },
+    { label: 'Pending Reviews', value: '42', icon: 'pi-clock', color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Active Job Posts', value: '15', icon: 'pi-briefcase', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Reports Sync', value: 'Online', icon: 'pi-sync', color: 'text-slate-500', bg: 'bg-slate-50' }
 ]);
+
+const applications = ref([
+    { id: 1, name: 'Juan Dela Cruz', position: 'Teacher I (Elementary)', date: '2026-02-24', status: 'Pending' },
+    { id: 2, name: 'Maria Clara', position: 'Master Teacher II', date: '2026-02-23', status: 'Shortlisted' },
+    { id: 3, name: 'Crisostomo Ibarra', position: 'Principal I', date: '2026-02-22', status: 'Pending' },
+]);
+
+const getStatusSeverity = (status) => {
+    switch (status) {
+        case 'Shortlisted': return 'success';
+        case 'Pending': return 'warn';
+        default: return 'info';
+    }
+};
 </script>
 
 <template>
     <AdminLayout>
-        <div class="dashboard-header">
-            <h1>Administrative Overview</h1>
-            <p>PRIME-HRM Compliance Monitoring & Recruitment Stats</p>
+        <div class="mb-6">
+            <h1 class="text-xl font-medium text-slate-800 tracking-tight">Administrative Overview</h1>
+            <p class="text-xs text-slate-500 mt-1 font-normal font-inter">PRIME-HRM Compliance Monitoring & Recruitment
+                Statistics</p>
         </div>
 
-        <div class="stats-grid">
-            <div v-for="stat in stats" :key="stat.label" class="stat-card" :style="{ borderTopColor: stat.color }">
-                <span class="stat-label">{{ stat.label }}</span>
-                <h2 class="stat-value">{{ stat.value }}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div v-for="stat in stats" :key="stat.label"
+                class="bg-white p-5 rounded-sm border border-corp-border flex items-center justify-between shadow-sm/5">
+                <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest font-inter">{{
+                        stat.label }}</span>
+                    <h2 class="text-2xl font-light text-slate-800 mt-1 font-roboto">{{ stat.value }}</h2>
+                </div>
+                <div :class="[stat.bg, stat.color]"
+                    class="w-10 h-10 rounded flex items-center justify-center border border-current/10">
+                    <i :class="['pi', stat.icon]" class="text-base"></i>
+                </div>
             </div>
         </div>
 
-        <div class="table-container">
-            <div class="table-header">
-                <h3>Recent Applications</h3>
-                <button class="btn-view-all">Export Report</button>
+        <div class="bg-white rounded-sm border border-corp-border shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                <h3 class="text-sm font-medium text-slate-700 font-inter">Recent Applications</h3>
+                <Button label="Export CSV" icon="pi pi-download" size="small" variant="text"
+                    class="!text-[11px] font-medium uppercase tracking-wider" />
             </div>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Applicant Name</th>
-                        <th>Position Applied</th>
-                        <th>Date Submitted</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Juan Dela Cruz</td>
-                        <td>Teacher I (Elementary)</td>
-                        <td>Feb 24, 2026</td>
-                        <td><span class="status-pill pending">Pending</span></td>
-                        <td><button class="btn-action">Review</button></td>
-                    </tr>
-                    <tr>
-                        <td>Maria Clara</td>
-                        <td>Master Teacher II</td>
-                        <td>Feb 23, 2026</td>
-                        <td><span class="status-pill active">Shortlisted</span></td>
-                        <td><button class="btn-action">Review</button></td>
-                    </tr>
-                </tbody>
-            </table>
+
+            <DataTable :value="applications" responsiveLayout="scroll" class="p-datatable-compact font-roboto">
+                <Column field="name" header="Applicant Name" class="text-[13px] text-slate-700 font-inter font-medium">
+                </Column>
+
+                <Column field="position" header="Position Applied" class="text-[13px] text-slate-500"></Column>
+
+                <Column field="date" header="Date Submitted">
+                    <template #body="slotProps">
+                        <span class="text-xs text-slate-400">{{ slotProps.data.date }}</span>
+                    </template>
+                </Column>
+
+                <Column field="status" header="Status">
+                    <template #body="slotProps">
+                        <Tag :value="slotProps.data.status" :severity="getStatusSeverity(slotProps.data.status)"
+                            class="!text-[10px] !px-2 !py-0.5 !font-medium !rounded-full !uppercase !tracking-tighter" />
+                    </template>
+                </Column>
+
+                <Column header="Action" headerStyle="width: 4rem; text-align: center" bodyStyle="text-align: center">
+                    <template #body>
+                        <Button icon="pi pi-ellipsis-h" variant="text" severity="secondary" size="small" class="!p-1" />
+                    </template>
+                </Column>
+            </DataTable>
         </div>
     </AdminLayout>
 </template>
 
 <style scoped>
-.dashboard-header {
-    margin-bottom: 2rem;
+@reference "@/assets/main.css";
+
+/* Instead of applying to classes, use standard CSS for fonts to avoid ! important issues */
+.font-inter {
+    font-family: 'Inter', sans-serif !important;
 }
 
-.dashboard-header h1 {
-    font-size: 1.8rem;
-    color: #1e293b;
-    margin-bottom: 0.2rem;
+.font-roboto {
+    font-family: 'Roboto', sans-serif !important;
 }
 
-.dashboard-header p {
-    color: #64748b;
+/* PrimeVue Overrides */
+:deep(.p-datatable-compact .p-datatable-thead > tr > th) {
+    /* Use ! prefix only on standard Tailwind utilities */
+    @apply !bg-slate-50/50 !text-slate-400 !text-[10px] !uppercase !tracking-widest !py-3 !px-4 !border-b !border-corp-border !font-semibold;
+    font-family: 'Inter', sans-serif !important;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
+:deep(.p-datatable-compact .p-datatable-tbody > tr > td) {
+    @apply !py-2.5 !px-4 !border-b !border-slate-50;
+    /* Use standard CSS for force-overriding PrimeVue padding/borders if @apply fails */
+    border-bottom-width: 1px !important;
 }
 
-.stat-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border-top: 4px solid;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.stat-label {
-    font-size: 0.85rem;
-    color: #64748b;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.stat-value {
-    font-size: 2rem;
-    color: #0f172a;
-    margin-top: 0.5rem;
-}
-
-.table-container {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-
-.admin-table th {
-    padding: 12px;
-    border-bottom: 2px solid #f1f5f9;
-    color: #64748b;
-    font-size: 0.85rem;
-}
-
-.admin-table td {
-    padding: 16px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 0.9rem;
-}
-
-.status-pill {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-.status-pill.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-pill.active {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.btn-action {
-    background: #f1f5f9;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    color: #475569;
-}
-
-.btn-action:hover {
-    background: #e2e8f0;
-}
-
-.btn-view-all {
-    background: #0f172a;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
+:deep(.p-datatable-compact .p-datatable-tbody > tr:hover) {
+    background-color: rgba(248, 250, 252, 0.5) !important;
 }
 </style>
