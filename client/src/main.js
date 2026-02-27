@@ -13,6 +13,7 @@ import 'primeicons/primeicons.css'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
 import Menu from 'primevue/menu'
+import Dialog from 'primevue/dialog'
 
 const app = createApp(App)
 
@@ -32,5 +33,5 @@ app.use(PrimeVue, {
 app.component('Button', Button)
 app.component('Avatar', Avatar)
 app.component('Menu', Menu)
-
+app.component('Dialog', Dialog)
 app.mount('#app')
