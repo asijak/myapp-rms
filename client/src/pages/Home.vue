@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'; // Added watch here
+import { ref, onMounted, computed, watch } from 'vue'; 
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -92,7 +92,7 @@ const searchQuery = ref('');
 const selectedCategory = ref('All');
 const categories = ref(['All', 'Teaching', 'Non-Teaching']);
 
-// Added logic to ensure filter defaults to 'All' if selection is cleared
+// Watcher to prevent null category selection
 watch(selectedCategory, (newVal) => {
     if (newVal === null) {
         selectedCategory.value = 'All';
@@ -214,10 +214,17 @@ onMounted(() => {
             </div>
 
             <div class="flex items-center justify-end gap-4 w-1/4">
-                <div class="hidden lg:flex flex-col items-end leading-none border-r border-slate-200 pr-4">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span v-if="weatherStatus === 'sunny'" class="animate-pulse text-sm">☀️</span>
-                        <span v-else class="animate-bounce text-sm">💧</span>
+                <div class="hidden lg:flex flex-col items-end leading-none border-r border-slate-200 pr-4 group cursor-help">
+                    <div class="flex items-center gap-2 mb-1 relative">
+                        <span v-if="weatherStatus === 'sunny'" class="text-sm transition-all duration-500 group-hover:scale-150 group-hover:rotate-[360deg] sun-glow">☀️</span>
+                        
+                        <div v-else class="relative flex items-center justify-center">
+                            <span class="text-sm z-10">💧</span>
+                            <div class="rain-container">
+                                <div v-for="n in 5" :key="n" class="drop" :style="{ left: (n*4) + 'px', animationDelay: (n*0.2) + 's' }"></div>
+                            </div>
+                        </div>
+
                         <span class="text-xs font-black text-slate-900">{{ currentTime }}</span>
                     </div>
                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ currentDate }}</span>
@@ -239,7 +246,7 @@ onMounted(() => {
             </div>
             <div class="hidden lg:block h-[500px] relative group">
                 <div class="relative h-full w-full rounded-[40px] overflow-hidden shadow-2xl">
-                    <img :src="slides[currentSlide].image" class="w-full h-full object-cover transition-opacity duration-1000" />
+                    <img :src="slides[currentSlide].image" class="w-full h-full object-cover transition-opacity duration-1000" alt="Carousel Slide" />
                 </div>
             </div>
         </main>
@@ -306,7 +313,7 @@ onMounted(() => {
                     <div v-for="member in teamMembers" :key="member.name" @click="openTeamDetail(member)"
                         class="bg-white/90 border border-white p-8 rounded-[40px] shadow-sm hover:shadow-2xl transition-all cursor-pointer text-center group">
                         <div class="relative mb-6 mx-auto w-32 h-32 overflow-hidden rounded-full ring-4 ring-slate-50 group-hover:ring-blue-500 transition-all">
-                            <img :src="member.image" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img :src="member.image" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Team Member" />
                         </div>
                         <h3 class="text-xl font-black text-slate-900 mb-1">{{ member.name }}</h3>
                         <p class="text-blue-600 text-xs font-black uppercase tracking-widest">{{ member.role }}</p>
@@ -397,6 +404,36 @@ onMounted(() => {
 
 <style scoped>
 @reference "@/assets/main.css";
+
+/* Weather Interaction Styles */
+.sun-glow:hover {
+    text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+}
+
+.rain-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.drop {
+    position: absolute;
+    background: #3b82f6;
+    width: 1.5px;
+    height: 4px;
+    opacity: 0;
+    animation: fall 0.8s linear infinite;
+}
+
+@keyframes fall {
+    0% { transform: translateY(-10px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(15px); opacity: 0; }
+}
+
 .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 :deep(.custom-selectbutton .p-button) { @apply bg-white/70 border-none shadow-sm font-bold text-slate-500 px-6 py-4 rounded-2xl; }
 :deep(.custom-selectbutton .p-button.p-highlight) { @apply bg-blue-600 text-white shadow-md; }
