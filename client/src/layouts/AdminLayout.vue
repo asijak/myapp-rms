@@ -15,6 +15,13 @@ const toast = useToast()
 const isCollapsed = ref(true)
 const isHovered = ref(false)
 const showSettingsModal = ref(false)
+<<<<<<< Updated upstream
+=======
+const showNotifications = ref(false)
+const showUserDropdown = ref(false)
+
+// Data State
+>>>>>>> Stashed changes
 const uploading = ref(false)
 const isSaving = ref(false)
 
@@ -234,12 +241,79 @@ const handlePasswordUpdate = async () => {
                             <i class="pi pi-chevron-down text-[10px] text-slate-400 hidden sm:block"></i>
                         </button>
 
+<<<<<<< Updated upstream
                         <div
                             class="absolute right-0 mt-2 w-44 rounded-xl bg-white shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-150 z-50">
                             <div class="px-3 py-2 border-b border-slate-100">
                                 <p class="text-xs font-semibold text-slate-800 truncate">{{ authStore.user?.username }}
                                 </p>
                                 <p class="text-[10px] text-slate-400 truncate">{{ authStore.user?.email }}</p>
+=======
+                        <div v-if="showNotifications"
+                            class="absolute right-0 mt-2 w-80 bg-[var(--surface)] border border-[var(--border-main)] shadow-xl rounded-xl overflow-hidden animate-zoom-in z-50">
+                            <div
+                                class="px-4 py-3 border-b border-[var(--border-main)] bg-[var(--bg-app)]/30 flex justify-between items-center">
+                                <span class="text-sm font-semibold">Notifications</span>
+                                <button class="text-xs text-[var(--color-solar)] font-semibold hover:underline">Mark all
+                                    as read</button>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto custom-scrollbar">
+                                <div v-for="n in notifications" :key="n.id"
+                                    class="p-4 hover:bg-[var(--bg-app)] border-b border-[var(--border-main)] last:border-0 flex gap-4 cursor-pointer transition-colors">
+                                    <div
+                                        :class="['w-10 h-10 rounded-full flex items-center justify-center shrink-0 dark:bg-slate-800 dark:text-slate-300', n.color]">
+                                        <i :class="['pi text-sm', n.icon]"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-[var(--text-main)]">{{ n.title }}</p>
+                                        <p class="text-xs text-[var(--text-muted)] mt-0.5">{{ n.time }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button @click="toggleTheme"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--bg-app)] text-[var(--text-muted)] transition-colors">
+                        <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"></i>
+                    </button>
+
+                    <div class="h-5 w-[1px] bg-[var(--border-main)] mx-1"></div>
+
+                    <div class="relative">
+
+                        <button @click="showUserDropdown = !showUserDropdown"
+                            @blur="setTimeout(() => showUserDropdown = false, 200)"
+                            class="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[var(--bg-app)] transition-colors border border-transparent hover:border-[var(--border-main)] focus:outline-none focus:border-[var(--border-main)]">
+                            <img :src="authStore.user?.avatarUrl"
+                                class="w-8 h-8 rounded-full bg-[var(--bg-app)] object-cover border border-[var(--border-main)]" />
+                            <div class="hidden md:flex flex-col items-start text-left mr-2">
+                                <span class="text-xs font-semibold leading-none">{{ authStore.user?.username }}</span>
+                                <span
+                                    class="text-[10px] text-[var(--text-muted)] mt-1 leading-none">Administrator</span>
+                            </div>
+                            <i class="pi pi-chevron-down text-[10px] text-[var(--text-muted)] hidden md:block"
+                                :class="{ 'rotate-180': showUserDropdown, 'transition-transform': true }"></i>
+                        </button>
+
+                        <div :class="[
+                            'absolute right-0 mt-2 w-56 bg-[var(--surface)] border border-[var(--border-main)] shadow-xl rounded-xl transition-all overflow-hidden z-50',
+                            showUserDropdown ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'
+                        ]">
+                            <div class="p-4 border-b border-[var(--border-main)]">
+                                <p class="text-xs text-[var(--text-muted)]">Signed in as</p>
+                                <p class="text-sm font-semibold truncate mt-0.5">{{ authStore.user?.username }}</p>
+                            </div>
+                            <div class="p-2">
+                                <button @click="showSettingsModal = true"
+                                    class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[var(--bg-app)] flex items-center gap-3 transition-colors">
+                                    <i class="pi pi-user text-[var(--text-muted)]"></i> Account Settings
+                                </button>
+                                <button @click="authStore.logout"
+                                    class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center gap-3 transition-colors mt-1">
+                                    <i class="pi pi-sign-out"></i> Sign Out
+                                </button>
+>>>>>>> Stashed changes
                             </div>
                             <button @click="showSettingsModal = true"
                                 class="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-slate-50 text-slate-600">

@@ -1,4 +1,5 @@
 <script setup>
+<<<<<<< Updated upstream
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { ref } from 'vue';
 
@@ -112,3 +113,14 @@ const getStatusSeverity = (status) => {
     background-color: rgba(248, 250, 252, 0.5) !important;
 }
 </style>
+=======
+</script>
+
+<template>
+    <div>
+        this is the admin dashboard
+    </div>
+</template>
+
+<style scoped></style>
+>>>>>>> Stashed changes
