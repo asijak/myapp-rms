@@ -1,20 +1,19 @@
 <script setup>
-import { ref, reactive } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useToast } from 'primevue/usetoast';
-import apiClient from '@/api/axios';
-
-// Cropper Imports
-import { Cropper } from 'vue-advanced-cropper';
-import 'vue-advanced-cropper/dist/style.css';
+import { ref, reactive } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from 'primevue/usetoast'
+import apiClient from '@/api/axios'
+import { Cropper } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 
 const authStore = useAuthStore();
 const toast = useToast();
+// UI State
+const showSettingsModal = ref(false)
+const showUserDropdown = ref(false)
+const uploading = ref(false)
+const isSaving = ref(false)
 
-// UI States
-const showSettingsModal = ref(false);
-const uploading = ref(false);
-const isSaving = ref(false);
 
 // Cropping Logic
 const fileInput = ref(null);
@@ -26,119 +25,80 @@ const passwordData = reactive({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
-});
+})
 
 const navLinks = [
     { name: 'Dashboard', to: '/user/dashboard', icon: 'pi-home' },
-    { name: 'Applications', to: '/user/applications', icon: 'pi-folder-open' },
-    { name: 'Find Jobs', to: '/vacancies', icon: 'pi-search' },
-];
+    { name: 'My Applications', to: '/user/applications', icon: 'pi-folder-open' },
+    { name: 'Job Vacancies', to: '/vacancies', icon: 'pi-megaphone' },
+]
 
-const triggerFileSelect = () => fileInput.value.click();
-
+const triggerFileSelect = () => fileInput.value.click()
 
 const onFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-
+    const file = event.target.files[0]
+    if (!file) return
     if (file.size > 10 * 1024 * 1024) {
-        toast.add({ severity: 'error', summary: 'File Too Large', detail: 'Max size is 10MB', life: 3000 });
-        return;
+        toast.add({ severity: 'error', summary: 'File Too Large', detail: 'Max size is 10MB', life: 3000 })
+        return
     }
 
     if (file.type === 'image/gif') {
-
-        uploadOriginalFile(file);
+        uploadFile(file, false)
     } else {
-        selectedImage.value = URL.createObjectURL(file);
+        selectedImage.value = URL.createObjectURL(file)
     }
-};
+}
 
+const uploadFile = async (fileOrBlob, isCropped = false) => {
+    const formData = new FormData()
+    const fileName = isCropped ? 'avatar.jpg' : fileOrBlob.name
+    formData.append('avatar', fileOrBlob, fileName)
 
-const uploadOriginalFile = async (file) => {
-    const formData = new FormData();
-
-    formData.append('avatar', file, file.name);
-
-    uploading.value = true;
+    uploading.value = true
     try {
-
-        const { data } = await apiClient.patch('/auth/update-avatar', formData);
-        if (data.status === 'success') {
-            updateUserInStore(data.user);
+        const { data } = await apiClient.patch('/auth/update-avatar', formData)
+        authStore.user = {
+            ...data.user,
+            avatarUrl: `${data.user.avatarUrl}?t=${Date.now()}`
         }
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Profile picture updated', life: 3000 })
+        selectedImage.value = null
     } catch (err) {
-        console.error("Upload Error:", err.response?.data || err.message);
-        toast.add({
-            severity: 'error',
-            summary: 'Upload Failed',
-            detail: err.response?.data?.message || 'Server connection error'
-        });
+        toast.add({ severity: 'error', summary: 'Upload Failed', detail: err.response?.data?.message || 'Server error', life: 3000 })
     } finally {
-        uploading.value = false;
-
-        if (fileInput.value) fileInput.value.value = '';
+        uploading.value = false
+        if (fileInput.value) fileInput.value.value = ''
     }
-};
+}
 
-
-const uploadCroppedImage = async () => {
-    const result = cropperRef.value.getResult();
-    if (!result || !result.canvas) return;
-
-    result.canvas.toBlob(async (blob) => {
-        if (!blob) return;
-
-        const formData = new FormData();
-        formData.append('avatar', blob, 'avatar.jpg');
-
-        uploading.value = true;
-        try {
-            const { data } = await apiClient.patch('/auth/update-avatar', formData);
-            if (data.status === 'success') {
-                updateUserInStore(data.user);
-            }
-        } catch (err) {
-            toast.add({ severity: 'error', summary: 'Upload Failed', detail: err.response?.data?.message });
-        } finally {
-            uploading.value = false;
-        }
-    }, 'image/jpeg', 0.9);
-};
-
-// 4. CENTRAL STORE UPDATE
-const updateUserInStore = (userData) => {
-    const updatedUser = { ...userData };
-    updatedUser.avatarUrl = `${updatedUser.avatarUrl}?t=${Date.now()}`;
-    authStore.user = updatedUser;
-
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Profile picture updated', life: 3000 });
-    selectedImage.value = null;
-};
+const uploadCroppedImage = () => {
+    const result = cropperRef.value.getResult()
+    if (!result?.canvas) return
+    result.canvas.toBlob(blob => blob && uploadFile(blob, true), 'image/jpeg', 0.9)
+}
 
 const handlePasswordUpdate = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-        toast.add({ severity: 'error', detail: 'Passwords do not match', life: 3000 });
-        return;
+        toast.add({ severity: 'error', detail: 'Passwords do not match', life: 3000 })
+        return
     }
 
-    isSaving.value = true;
+    isSaving.value = true
     try {
         await apiClient.patch('/auth/update-password', {
             currentPassword: passwordData.currentPassword,
             newPassword: passwordData.newPassword
-        });
-
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Password updated', life: 3000 });
-        showSettingsModal.value = false;
-        Object.assign(passwordData, { currentPassword: '', newPassword: '', confirmPassword: '' });
+        })
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Password updated', life: 3000 })
+        showSettingsModal.value = false
+        Object.assign(passwordData, { currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
-        toast.add({ severity: 'error', detail: err.response?.data?.message || 'Update failed', life: 4000 });
+        toast.add({ severity: 'error', detail: err.response?.data?.message || 'Update failed', life: 4000 })
     } finally {
-        isSaving.value = false;
+        isSaving.value = false
     }
-};
+}
 </script>
 
 <template>
@@ -146,12 +106,12 @@ const handlePasswordUpdate = async () => {
         <Toast />
 
         <header
-            class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 h-14 flex items-center px-4 sm:px-6 lg:px-8 justify-between">
-            <div class="flex items-center gap-6">
-                <router-link to="/" class="flex items-center gap-2.5 group">
+            class="sticky top-0 z-30 bg-[var(--surface-0)]/90 backdrop-blur-md shadow-[var(--shadow-sm)] h-[64px] flex items-center px-4 sm:px-6 lg:px-8 justify-between transition-all">
+            <div class="flex items-center gap-8">
+                <router-link to="/" class="flex items-center gap-3 group">
                     <div
-                        class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center shadow-sm transition-transform group-hover:scale-105">
-                        <i class="pi pi-send text-white text-[10px]"></i>
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-[var(--shadow-primary)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
+                        <i class="pi pi-file-edit text-white text-lg"></i>
                     </div>
                     <span class="text-[15px] font-bold tracking-tight text-slate-800">
                         RSP <span class="text-sky-600 font-medium">Portal</span>
@@ -219,7 +179,7 @@ const handlePasswordUpdate = async () => {
             </div>
         </div>
 
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
             <slot />
         </main>
 
