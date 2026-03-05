@@ -25,13 +25,22 @@ const routes = [
   // User Role Group
   {
     path: '/user/dashboard',
+    name: 'UserDashboard',
     component: () => import('@/pages/user/Dashboard.vue'),
     meta: { requiresAuth: true, role: 'user' },
+  },
+  // YOUR JOBS ROUTE (Perfectly set up!)
+  {
+    path: '/user/jobs',
+    name: 'UserJobs',
+    component: () => import('@/pages/user/Jobs.vue'),
+    meta: { requiresAuth: true, role: 'user'},
   },
 
   // Admin Role Group
   {
     path: '/admin/dashboard',
+    name: 'AdminDashboard',
     component: () => import('@/pages/admin/Dashboard.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },

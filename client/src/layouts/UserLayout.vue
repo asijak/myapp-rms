@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue'; // FIXED: Added missing 'reactive' import
+import { ref, reactive } from 'vue'; 
 import { useAuthStore } from '@/stores/auth';
 import { useToast } from 'primevue/usetoast';
 import { useRouter, useRoute } from 'vue-router'; 
@@ -37,30 +37,15 @@ const passwordData = reactive({
 const navLinks = [
     { name: 'Dashboard', to: '/user/dashboard', icon: 'pi-home' },
     { name: 'Applications', to: '/user/applications', icon: 'pi-folder-open' },
-    { name: 'Find Jobs', action: 'jobs', icon: 'pi-search' }, 
+    // FIXED: Changed to a standard route link so it redirects to the Jobs page
+    { name: 'Find Jobs', to: '/user/jobs', icon: 'pi-search' }, 
 ];
-
-
-
-
-
-
-
-
 
 // Navigation Handler
 const handleNavigation = async (link) => {
     if (link.to) {
         router.push(link.to);
-    } else if (link.action === 'jobs') {
-        await router.push('/');
-        setTimeout(() => {
-            const jobSection = document.getElementById('jobs');
-            if (jobSection) {
-                jobSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 150); 
-    }
+    } 
 };
 
 const triggerFileSelect = () => fileInput.value.click();
@@ -168,7 +153,6 @@ const handlePasswordUpdate = async () => {
         
         <Toast />
 
-
         <header
             class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 h-14 flex items-center px-4 sm:px-6 lg:px-8 justify-between">
             <div class="flex items-center gap-6">
@@ -243,8 +227,6 @@ const handlePasswordUpdate = async () => {
                 </div>
             </div>
         </div>
-
-
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full relative z-10">
             <slot />

@@ -9,6 +9,8 @@ onMounted(async () => {
     await authStore.fetchCurrentUser();
   }
 });
+
+
 </script>
 
 <template>

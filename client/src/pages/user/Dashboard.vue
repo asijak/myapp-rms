@@ -5,8 +5,6 @@ import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const router = useRouter(); 
-
-// Updated function to navigate to the home page and scroll down to the #jobs section
 const goToJobs = () => {
     router.push({ path: '/', hash: '#jobs' });
 };
