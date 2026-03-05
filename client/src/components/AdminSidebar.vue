@@ -51,8 +51,7 @@ const navGroups = [
                     { label: 'Roles & Permissions', icon: 'pi pi-shield', to: '/admin/roles-permissions' },
                     { label: 'Audit Logs', icon: 'pi pi-history', to: '/admin/audit-logs' },
                 ]
-            },
-            { label: 'System Settings', icon: 'pi pi-cog', to: '/admin/settings' }
+            }
         ]
     }
 ];

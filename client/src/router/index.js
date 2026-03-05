@@ -146,15 +146,8 @@ router.beforeEach(async (to, from) => {
   }
 
   const isLoggedIn = authStore.isAuthenticated
-  const isStaff = authStore.isStaff // Assuming this returns true for admin/HR roles
 
-  // 2. Handle the "Home" logic (NEW)
-  // If a user hits '/' and they are logged in, send them to their dashboard immediately
-  if (to.path === '/' && isLoggedIn) {
-    return authStore.dashboardRoute
-  }
-
-  // 3. Prevent logged-in users from seeing login/register
+  // If already logged in, don't let them see /auth pages
   if (isLoggedIn && to.path.startsWith('/auth')) {
     return authStore.dashboardRoute
   }
