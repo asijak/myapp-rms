@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -11,6 +12,8 @@ const form = ref({ email: '', password: '' });
 const loading = ref(false);
 const error = ref('');
 const showPassword = ref(false);
+
+const logoSize = ref(100); 
 
 const handleLogin = async () => {
     loading.value = true;

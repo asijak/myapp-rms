@@ -3,6 +3,10 @@ import UserLayout from '@/layouts/UserLayout.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
+const router = useRouter(); 
+const goToJobs = () => {
+    router.push({ path: '/', hash: '#jobs' });
+};
 </script>
 
 <template>

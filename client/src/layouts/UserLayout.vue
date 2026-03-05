@@ -100,9 +100,10 @@ const handlePasswordUpdate = async () => {
     }
 }
 </script>
-
 <template>
-    <div class="min-h-screen flex flex-col bg-slate-50 font-inter text-sm text-slate-600 antialiased">
+    <div class="min-h-screen flex flex-col font-inter text-sm text-slate-600 antialiased"
+         style="background-image: linear-gradient(rgba(248, 250, 252, 0.50), rgba(248, 250, 252, 0.50)), url('https://image2url.com/r2/default/images/1772169455473-54bb76c7-1d32-4152-8411-9e38daab5695.png'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;">
+        
         <Toast />
 
         <header
@@ -119,11 +120,12 @@ const handlePasswordUpdate = async () => {
                 </router-link>
 
                 <nav class="hidden md:flex items-center gap-1">
-                    <router-link v-for="link in navLinks" :key="link.to" :to="link.to"
-                        class="flex items-center gap-2 px-4 h-14 rounded-md text-slate-500 font-semibold text-[13px] transition-all hover:text-sky-600 hover:bg-slate-50 aria-[current=page]:text-sky-600 aria-[current=page]:bg-sky-50/50">
+                    <a v-for="link in navLinks" :key="link.name" @click.prevent="handleNavigation(link)"
+                        class="cursor-pointer flex items-center gap-2 px-4 h-14 rounded-md text-slate-500 font-semibold text-[13px] transition-all hover:text-sky-600 hover:bg-slate-50"
+                        :class="{ 'text-sky-600 bg-sky-50/50': route.path === link.to && link.to }">
                         <i class="pi text-[11px]" :class="link.icon"></i>
                         <span>{{ link.name }}</span>
-                    </router-link>
+                    </a>
                 </nav>
             </div>
 
@@ -174,7 +176,9 @@ const handlePasswordUpdate = async () => {
                 <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     <span>Applicant Workspace</span>
                     <i class="pi pi-angle-right text-[8px]"></i>
+
                     <span class="text-sky-600">{{ $route.name || 'Overview' }}</span>
+
                 </div>
             </div>
         </div>
