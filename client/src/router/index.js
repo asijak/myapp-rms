@@ -47,11 +47,6 @@ const routes = [
   // APPLICANT / USER ROUTES
   // ==========================================
   {
-    path: '/vacancies',
-    name: 'Job Vacancies',
-    component: () => import('@/pages/user/Vacancies.vue'),
-  },
-  {
     path: '/user',
     component: () => import('@/layouts/UserLayout.vue'),
     meta: { requiresAuth: true, role: 'user' },
@@ -69,6 +64,11 @@ const routes = [
         path: 'applications',
         name: 'My Applications',
         component: () => import('@/pages/user/Applications.vue'),
+      },
+      {
+        path: '/vacancies',
+        name: 'Job Vacancies',
+        component: () => import('@/pages/user/Vacancies.vue'),
       },
     ],
   },
@@ -94,7 +94,7 @@ const routes = [
         path: 'roles-permissions',
         name: 'Roles & Permissions',
         component: () => import('@/pages/admin/RolesPermissions.vue'),
-        meta: { permission: 'role_view' }, // Fixed typo from 'permissions' array to string
+        meta: { permission: 'role_view' },
       },
       {
         path: 'user-list',
