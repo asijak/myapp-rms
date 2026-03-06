@@ -8,15 +8,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:isHovered']);
 
-// Dropdown states
-const activeDropdowns = ref({
-    accounts: false,
-    hiring: false,
-    reports: false
-});
+// 🪄 SMART ACCORDION STATE: Tracks only the currently open dropdown key (or null if all are closed)
+const activeDropdown = ref(null);
 
 const toggleDropdown = (key) => {
-    activeDropdowns.value[key] = !activeDropdowns.value[key];
+    // If the clicked one is already open, close it by setting to null. Otherwise, open it.
+    activeDropdown.value = activeDropdown.value === key ? null : key;
 };
 
 const navGroups = [
@@ -101,7 +98,7 @@ const navGroups = [
 
                         <div v-else class="space-y-1">
                             <button @click="toggleDropdown(item.key)"
-                                :class="[activeDropdowns[item.key] ? 'text-white bg-slate-800/30' : 'text-slate-400']"
+                                :class="[activeDropdown === item.key ? 'text-white bg-slate-800/30' : 'text-slate-400']"
                                 class="w-full group flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg transition-all duration-200 hover:text-white hover:bg-slate-800/50">
                                 <div class="flex items-center gap-4">
                                     <i :class="item.icon"
@@ -112,11 +109,11 @@ const navGroups = [
                                     </span>
                                 </div>
                                 <i v-show="!isCollapsed || isHovered"
-                                    :class="[activeDropdowns[item.key] ? 'rotate-180 text-[#EAB308]' : 'text-slate-600']"
+                                    :class="[activeDropdown === item.key ? 'rotate-180 text-[#EAB308]' : 'text-slate-600']"
                                     class="pi pi-chevron-down text-[9px] transition-transform duration-300"></i>
                             </button>
 
-                            <div v-show="activeDropdowns[item.key] && (!isCollapsed || isHovered)"
+                            <div v-show="activeDropdown === item.key && (!isCollapsed || isHovered)"
                                 class="mt-1 ml-6 space-y-1 border-l border-slate-800 pl-4 animate-slide-down">
                                 <router-link v-for="subItem in item.subItems" :key="subItem.to" :to="subItem.to"
                                     class="flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-slate-500 hover:text-white transition-all aria-[current=page]:text-[#EAB308] aria-[current=page]:font-bold">
