@@ -53,6 +53,13 @@ const routes = [
         name: 'My Applications',
         component: () => import('@/pages/user/Applications.vue'),
       },
+     {
+    path: '/:pathMatch(.*)*', 
+    name: 'NotFound',
+    // 🪄 Add /components/ before /errors/
+    component: () => import('@/components/errors/NotAuthorized.vue'),
+    props: { code: 404 } 
+}
     ],
   },
 

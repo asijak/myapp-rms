@@ -1,11 +1,27 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const emit = defineEmits(['open-job']);
 
 const searchQuery = ref('');
-const selectedCategory = ref('All');
-const categories = ref(['All', 'Teaching', 'Teaching Related', 'Non-Teaching']);
+
+// 🪄 Set to null initially so NOTHING is selected, meaning it shows ALL by default
+const selectedCategory = ref(null); 
+
+// 🪄 Removed 'All' from the list so they act purely as toggle filters
+const categories = ref(['Teaching', 'Teaching Related', 'Non-Teaching']);
+
+// 🪄 Smart Toggle Function
+const toggleCategory = (category) => {
+    // If they click the category that is ALREADY selected, unselect it (set to null)
+    if (selectedCategory.value === category) {
+        selectedCategory.value = null;
+    } 
+    // Otherwise, select the new category
+    else {
+        selectedCategory.value = category;
+    }
+};
 
 const jobList = ref([
     {
@@ -42,9 +58,29 @@ const filteredJobs = computed(() => {
         const matchesSearch = !searchQuery.value || 
             job.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             job.division.toLowerCase().includes(searchQuery.value.toLowerCase());
-        const matchesCategory = selectedCategory.value === 'All' || job.category === selectedCategory.value;
+            
+        // 🪄 If selectedCategory is null (nothing selected), this is automatically TRUE for all jobs
+        const matchesCategory = !selectedCategory.value || job.category === selectedCategory.value;
+        
         return matchesSearch && matchesCategory;
     });
+});
+
+onMounted(() => {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('emerge-visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+    setTimeout(() => {
+        document.querySelectorAll('#jobs .emerge-hidden').forEach((el) => {
+            observer.observe(el);
+        });
+    }, 100);
 });
 </script>
 
@@ -66,8 +102,8 @@ const filteredJobs = computed(() => {
                     
                     <div class="flex bg-white p-1 rounded border border-slate-300 whitespace-nowrap overflow-x-auto w-full sm:w-auto">
                         <button v-for="category in categories" :key="category"
-                            @click="selectedCategory = category"
-                            :class="['px-5 py-2 text-xs rounded-sm font-bold transition-all duration-200 outline-none', selectedCategory === category ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900']">
+                            @click="toggleCategory(category)"
+                            :class="['px-5 py-2 text-xs rounded-sm font-bold transition-all duration-200 outline-none', selectedCategory === category ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900']">
                             {{ category }}
                         </button>
                     </div>
@@ -94,7 +130,26 @@ const filteredJobs = computed(() => {
                         <span class="text-[10px] text-slate-400 group-hover:text-slate-900 font-bold uppercase tracking-widest transition-colors flex items-center gap-1">Details <i class="pi pi-arrow-right text-[8px] mt-[1px]"></i></span>
                     </div>
                 </div>
+                
+                <div v-if="filteredJobs.length === 0" class="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                    <i class="pi pi-search text-3xl mb-4 opacity-50"></i>
+                    <p class="text-sm font-medium">No vacancies found matching your criteria.</p>
+                </div>
             </div>
         </div>
     </section>
 </template>
+
+<style scoped>
+@reference "@/assets/main.css";
+
+.emerge-hidden {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.emerge-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+</style>
