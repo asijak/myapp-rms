@@ -1,7 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { StatCard, EmptyState } from '@/components/ui'
 import apiClient from '@/api/axios'
+
+const router = useRouter()
 
 const authStore = useAuthStore()
 const loading = ref(false)
@@ -16,7 +20,6 @@ onMounted(async () => {
             apiClient.get('/v1/jobs'),
             apiClient.get('/v1/users'),
         ])
-
         if (jobsRes.status === 'fulfilled') {
             const jobs = jobsRes.value.data.data || []
             stats.value.totalJobs = jobs.length
@@ -31,13 +34,6 @@ onMounted(async () => {
         loading.value = false
     }
 })
-
-const statCards = [
-    { key: 'totalJobs',        label: 'Total Vacancies',    icon: 'pi-briefcase',   color: 'bg-blue-50 border-blue-200 text-blue-600' },
-    { key: 'publishedJobs',    label: 'Published',          icon: 'pi-check-circle', color: 'bg-green-50 border-green-200 text-green-600' },
-    { key: 'totalApplications',label: 'Applications',       icon: 'pi-folder-open', color: 'bg-purple-50 border-purple-200 text-purple-600' },
-    { key: 'totalUsers',       label: 'Registered Users',   icon: 'pi-users',       color: 'bg-amber-50 border-amber-200 text-amber-600' },
-]
 
 const statusBadge = {
     published: 'bg-green-100 text-green-700 border-green-200',
@@ -57,15 +53,15 @@ const trackLabel = { teaching: 'Teaching', teaching_related: 'Teaching-Related',
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
 
 const quickLinks = [
-    { label: 'Manage Vacancies', icon: 'pi-briefcase',    to: '/admin/vacancies',  color: 'bg-blue-50 border-blue-200 text-blue-600' },
-    { label: 'User Accounts',    icon: 'pi-users',         to: '/admin/user-list',  color: 'bg-green-50 border-green-200 text-green-600' },
-    { label: 'Applicants List',  icon: 'pi-folder-open',  to: '/admin/applicants', color: 'bg-purple-50 border-purple-200 text-purple-600' },
-    { label: 'Audit Logs',       icon: 'pi-history',       to: '/admin/audit-logs', color: 'bg-amber-50 border-amber-200 text-amber-600' },
+    { label: 'Manage Vacancies', icon: 'pi-briefcase', to: '/admin/vacancies',  cls: 'bg-blue-50 border-blue-200 text-blue-600'   },
+    { label: 'User Accounts',    icon: 'pi-users',     to: '/admin/user-list',  cls: 'bg-green-50 border-green-200 text-green-600'  },
+    { label: 'Applicants List',  icon: 'pi-folder',    to: '/admin/applicants', cls: 'bg-purple-50 border-purple-200 text-purple-600' },
+    { label: 'Audit Logs',       icon: 'pi-history',   to: '/admin/audit-logs', cls: 'bg-amber-50 border-amber-200 text-amber-600'  },
 ]
 </script>
 
 <template>
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 animate-fade-in-up">
 
         <!-- Welcome -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -75,27 +71,42 @@ const quickLinks = [
                     Welcome, <span class="capitalize">{{ authStore.user?.username }}</span>
                 </h1>
             </div>
-            <div class="flex items-center gap-2 text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border-main)] px-4 py-2.5 rounded-xl">
-                <i class="pi pi-calendar text-[11px]"></i>
+            <div class="flex items-center gap-2 text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border-main)] px-4 py-2.5 rounded-xl shrink-0">
+                <i class="pi pi-calendar text-[11px]" aria-hidden="true"></i>
                 {{ new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
             </div>
         </div>
 
         <!-- Stat Cards -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div v-for="card in statCards" :key="card.key"
-                class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl p-5 flex items-start gap-4">
-                <div :class="['w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0', card.color]">
-                    <i :class="['pi text-sm', card.icon]"></i>
-                </div>
-                <div>
-                    <p class="text-2xl font-bold text-[var(--text-main)]">
-                        <span v-if="loading" class="inline-block w-8 h-6 bg-[var(--border-main)] rounded animate-pulse"></span>
-                        <span v-else>{{ stats[card.key] }}</span>
-                    </p>
-                    <p class="text-xs font-medium text-[var(--text-muted)] mt-0.5">{{ card.label }}</p>
-                </div>
-            </div>
+            <StatCard
+                title="Total Vacancies"
+                :value="stats.totalJobs"
+                icon="briefcase"
+                iconColor="blue"
+                :loading="loading"
+                to="/admin/vacancies" />
+            <StatCard
+                title="Published"
+                :value="stats.publishedJobs"
+                icon="check-circle"
+                iconColor="green"
+                :loading="loading"
+                to="/admin/vacancies" />
+            <StatCard
+                title="Applications"
+                :value="stats.totalApplications"
+                icon="folder-open"
+                iconColor="purple"
+                :loading="loading"
+                to="/admin/applicants" />
+            <StatCard
+                title="Registered Users"
+                :value="stats.totalUsers"
+                icon="users"
+                iconColor="amber"
+                :loading="loading"
+                to="/admin/user-list" />
         </div>
 
         <!-- Main grid -->
@@ -107,21 +118,26 @@ const quickLinks = [
                     <h2 class="text-sm font-bold text-[var(--text-main)]">Recent Vacancies</h2>
                     <router-link to="/admin/vacancies"
                         class="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center gap-1 transition-colors">
-                        View all <i class="pi pi-arrow-right text-[9px]"></i>
+                        View all <i class="pi pi-arrow-right text-[9px]" aria-hidden="true"></i>
                     </router-link>
                 </div>
 
-                <div v-if="loading" class="p-5 flex flex-col gap-3">
+                <!-- Loading skeleton -->
+                <div v-if="loading" class="p-5 flex flex-col gap-3" aria-busy="true" aria-label="Loading vacancies">
                     <div v-for="i in 4" :key="i" class="h-12 rounded-lg bg-[var(--bg-app)] animate-pulse"></div>
                 </div>
 
-                <div v-else-if="recentJobs.length === 0" class="py-16 flex flex-col items-center gap-3 text-[var(--text-muted)]">
-                    <i class="pi pi-briefcase text-3xl text-slate-300"></i>
-                    <p class="text-sm">No vacancies yet</p>
-                    <router-link to="/admin/vacancies"
-                        class="text-xs font-semibold text-[var(--color-primary)] hover:underline">Create one</router-link>
-                </div>
+                <!-- Empty state -->
+                <EmptyState
+                    v-else-if="recentJobs.length === 0"
+                    icon="briefcase"
+                    title="No vacancies yet"
+                    description="Post your first job vacancy to get started."
+                    action-label="Create Vacancy"
+                    @action="router.push('/admin/vacancies')"
+                    compact />
 
+                <!-- Job list -->
                 <div v-else class="divide-y divide-[var(--border-main)]">
                     <div v-for="job in recentJobs" :key="job._id"
                         class="px-5 py-3.5 flex items-center gap-4 hover:bg-[var(--bg-app)] transition-colors">
@@ -152,11 +168,11 @@ const quickLinks = [
                 <div class="p-3 flex flex-col gap-2">
                     <router-link v-for="link in quickLinks" :key="link.to" :to="link.to"
                         class="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--bg-app)] border border-transparent hover:border-[var(--border-main)] transition-all group">
-                        <div :class="['w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0', link.color]">
-                            <i :class="['pi text-sm', link.icon]"></i>
+                        <div :class="['w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0', link.cls]">
+                            <i :class="['pi text-sm', link.icon]" aria-hidden="true"></i>
                         </div>
                         <span class="text-sm font-medium text-[var(--text-main)]">{{ link.label }}</span>
-                        <i class="pi pi-arrow-right text-[10px] text-[var(--text-muted)] ml-auto opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        <i class="pi pi-arrow-right text-[10px] text-[var(--text-muted)] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true"></i>
                     </router-link>
                 </div>
             </div>

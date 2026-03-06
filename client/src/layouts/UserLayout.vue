@@ -214,10 +214,9 @@ const closeMenu = () => { showMobileMenu.value = false }
                 </div>
             </div>
         </footer>
-    </div>
 
-    <!-- ── Settings Modal ────────────────────────────────────── -->
-    <Teleport to="body">
+        <!-- ── Settings Modal ────────────────────────────────────── -->
+        <Teleport to="body">
         <div v-if="showSettings"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
             role="dialog" aria-modal="true" aria-labelledby="user-settings-title"
@@ -312,17 +311,6 @@ const closeMenu = () => { showMobileMenu.value = false }
                 </div>
             </div>
         </div>
-    </Teleport>
+        </Teleport>
+    </div>
 </template>
-
-<style scoped>
-.dropdown-enter-active { transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
-.dropdown-leave-active { transition: all 0.12s ease; }
-.dropdown-enter-from   { opacity: 0; transform: translateY(-6px) scale(0.97); }
-.dropdown-leave-to     { opacity: 0; transform: translateY(-4px); }
-
-.slide-down-enter-active { transition: all 0.2s ease; }
-.slide-down-leave-active { transition: all 0.15s ease; }
-.slide-down-enter-from   { opacity: 0; transform: translateY(-8px); }
-.slide-down-leave-to     { opacity: 0; transform: translateY(-4px); }
-</style>

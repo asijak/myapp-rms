@@ -19,9 +19,7 @@ const settingsTab      = ref('photo')   // 'photo' | 'password'
 const uploading        = ref(false)
 const isSaving         = ref(false)
 const fileInput        = ref(null)
-const showCurrentPw    = ref(false)
-const showNewPw        = ref(false)
-const showConfirmPw    = ref(false)
+const pwShow = reactive({ current: false, new: false, confirm: false })
 
 const notifications = ref([
     { id: 1, icon: 'pi-user-plus',  text: 'New applicant registered',  time: '2m ago',   read: false },
@@ -288,23 +286,23 @@ const avatarSrc = () => authStore.user?.avatarUrl
                         </div>
                         <template v-else>
                             <div v-for="field in [
-                                { model: 'current', show: 'showCurrentPw', label: 'Current Password' },
-                                { model: 'new',     show: 'showNewPw',     label: 'New Password'     },
-                                { model: 'confirm', show: 'showConfirmPw', label: 'Confirm Password'  },
+                                { model: 'current', key: 'current', label: 'Current Password', ac: 'current-password' },
+                                { model: 'new',     key: 'new',     label: 'New Password',     ac: 'new-password', hint: 'Min. 8 characters' },
+                                { model: 'confirm', key: 'confirm', label: 'Confirm Password',  ac: 'new-password' },
                             ]" :key="field.model" class="flex flex-col gap-1.5">
                                 <label :for="`pw-${field.model}`" class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                                     {{ field.label }}
                                 </label>
                                 <div class="relative">
                                     <input :id="`pw-${field.model}`" v-model="pw[field.model]"
-                                        :type="$data[field.show] ? 'text' : 'password'"
-                                        :placeholder="field.model === 'new' ? 'Min. 8 characters' : '••••••••'"
+                                        :type="pwShow[field.key] ? 'text' : 'password'"
+                                        :placeholder="field.hint || '••••••••'"
                                         class="input pr-10"
-                                        :autocomplete="field.model === 'current' ? 'current-password' : 'new-password'" />
-                                    <button type="button" @click="$data[field.show] = !$data[field.show]"
+                                        :autocomplete="field.ac" />
+                                    <button type="button" @click="pwShow[field.key] = !pwShow[field.key]"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                                        :aria-label="$data[field.show] ? `Hide ${field.label}` : `Show ${field.label}`">
-                                        <i :class="['pi text-sm', $data[field.show] ? 'pi-eye-slash' : 'pi-eye']" aria-hidden="true"></i>
+                                        :aria-label="pwShow[field.key] ? `Hide ${field.label}` : `Show ${field.label}`">
+                                        <i :class="['pi text-sm', pwShow[field.key] ? 'pi-eye-slash' : 'pi-eye']" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>
@@ -327,9 +325,3 @@ const avatarSrc = () => authStore.user?.avatarUrl
     </div>
 </template>
 
-<style scoped>
-.dropdown-enter-active { transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
-.dropdown-leave-active { transition: all 0.12s ease; }
-.dropdown-enter-from   { opacity: 0; transform: translateY(-6px) scale(0.97); }
-.dropdown-leave-to     { opacity: 0; transform: translateY(-4px); }
-</style>

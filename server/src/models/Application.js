@@ -113,7 +113,7 @@ const applicationSchema = new mongoose.Schema(
 /**
  * 🔹 AUTO-INCREMENT CODE: APP-YYYY-0001 (Per Job)
  */
-applicationSchema.pre("save", async function (next) {
+applicationSchema.pre("save", async function () {
   if (this.isNew && !this.applicationCode) {
     const year = new Date().getFullYear();
     const count = await mongoose.model("Application").countDocuments({
@@ -126,7 +126,7 @@ applicationSchema.pre("save", async function (next) {
     this.applicationCode = `APP-${year}-${String(count + 1).padStart(4, "0")}`;
   }
 
-  // 🔹 AUTO-CALCULATE TOTAL SCORE
+  // AUTO-CALCULATE TOTAL SCORE
   const r = this.hrRating;
   this.totalScore =
     r.educationPoints +
@@ -139,8 +139,6 @@ applicationSchema.pre("save", async function (next) {
     (r.potentialPoints?.writtenTest || 0) +
     (r.potentialPoints?.bei || 0) +
     (r.potentialPoints?.workSample || 0);
-
-  next();
 });
 
 export default mongoose.model("Application", applicationSchema);

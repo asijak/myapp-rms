@@ -100,7 +100,7 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
-userSchema.pre("findOneAndDelete", async function (next) {
+userSchema.pre("findOneAndDelete", async function () {
   const query = this.getQuery();
   const user = await this.model.findOne(query);
 
@@ -113,6 +113,5 @@ userSchema.pre("findOneAndDelete", async function (next) {
       "This is a protected system account and cannot be deleted.",
     );
   }
-  next();
 });
 export default mongoose.model("User", userSchema);

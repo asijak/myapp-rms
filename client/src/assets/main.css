@@ -2,40 +2,61 @@
 @import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════
-   DEPED RSP PORTAL — DESIGN TOKENS
-   Primary: DepEd Institutional Blue  |  Accent: DepEd Gold
+   DEPED RSP PORTAL — DESIGN SYSTEM TOKENS
+   Theme: DepEd Institutional Blue + Gold
+   Inspired by: Stripe, Linear, Notion quality
 ═══════════════════════════════════════════════════════════ */
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* ── DepEd Brand ── */
-  --color-primary:       #1d4ed8;   /* DepEd blue  */
+  /* ── Brand Colors ─────────────────────────────────────── */
+  --color-primary:       #1d4ed8;
   --color-primary-dark:  #1e40af;
-  --color-primary-light: #eff6ff;   /* blue-50     */
-  --color-primary-ring:  #93c5fd;   /* blue-300    */
-  --color-gold:          #d97706;   /* DepEd gold  */
-  --color-gold-light:    #fffbeb;   /* amber-50    */
-  --color-gold-ring:     #fcd34d;   /* amber-300   */
+  --color-primary-hover: #2563eb;
+  --color-primary-light: #eff6ff;
+  --color-primary-ring:  #93c5fd;
+  --color-gold:          #d97706;
+  --color-gold-light:    #fffbeb;
+  --color-gold-ring:     #fcd34d;
 
-  /* ── Surfaces (Light) ── */
-  --bg-app:      #f1f5f9;   /* slate-100 */
-  --surface:     #ffffff;
-  --surface-2:   #f8fafc;   /* slate-50  */
-  --border-main: #e2e8f0;   /* slate-200 */
-  --border-focus:#1d4ed8;   /* primary   */
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --bg-app:       #f1f5f9;
+  --bg-subtle:    #f8fafc;
+  --surface:      #ffffff;
+  --surface-2:    #f8fafc;
+  --surface-raised: #ffffff;
 
-  /* ── Text ── */
-  --text-main:   #0f172a;   /* slate-900 */
-  --text-sub:    #334155;   /* slate-700 */
-  --text-muted:  #64748b;   /* slate-500 */
-  --text-faint:  #94a3b8;   /* slate-400 */
+  /* ── Borders ──────────────────────────────────────────── */
+  --border-main:   #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-strong: #cbd5e1;
+  --border-focus:  #1d4ed8;
 
-  /* ── Legacy compat ── */
+  /* ── Text ─────────────────────────────────────────────── */
+  --text-main:    #0f172a;
+  --text-sub:     #334155;
+  --text-muted:   #64748b;
+  --text-faint:   #94a3b8;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.18);
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Legacy compat ────────────────────────────────────── */
   --color-solar:       var(--color-gold);
   --color-solar-hover: var(--color-primary-dark);
 }
 
-/* ── Dark Mode ──────────────────────────────────────── */
+/* ── Dark Mode ────────────────────────────────────────── */
 .dark {
   --color-primary:       #60a5fa;
   --color-primary-dark:  #3b82f6;
@@ -45,10 +66,12 @@
   --color-gold-light:    #292524;
 
   --bg-app:      #020617;
+  --bg-subtle:   #0a0f1e;
   --surface:     #0f172a;
   --surface-2:   #1e293b;
   --border-main: #1e293b;
-  --border-focus:#60a5fa;
+  --border-strong:#334155;
+  --border-focus: #60a5fa;
 
   --text-main:   #f1f5f9;
   --text-sub:    #cbd5e1;
@@ -57,13 +80,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   BASE
+   BASE RESET + GLOBAL STYLES
 ═══════════════════════════════════════════════════════════ */
 *, *::before, *::after {
   box-sizing: border-box;
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
 }
 
 html, body {
@@ -74,9 +94,15 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
 }
 
-/* ── Skip Link (Accessibility) ───────────────────────── */
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+/* ── Skip Link (Accessibility) ─────────────────────────── */
 .skip-link {
   position: absolute;
   top: -100%;
@@ -89,101 +115,111 @@ html, body {
   font-weight: 600;
   border-radius: 0 0 0.5rem 0.5rem;
   text-decoration: none;
-  transition: top 0.15s ease;
 }
 .skip-link:focus { top: 0; }
 
-/* ── Focus Rings (Accessibility-first) ──────────────── */
+/* ── Focus Rings ───────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ── Selection ───────────────────────────────────────── */
-::selection {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-}
-
 /* ═══════════════════════════════════════════════════════════
-   SCROLLBAR
+   SCROLLBARS
 ═══════════════════════════════════════════════════════════ */
 .custom-scrollbar::-webkit-scrollbar        { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--border-main); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--border-strong); border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
 /* ═══════════════════════════════════════════════════════════
    GLOBAL ANIMATIONS
+   All keyframe animations live here — do NOT duplicate in <style scoped>
 ═══════════════════════════════════════════════════════════ */
+
+/* ── Page entry ──────────────────────────────────────────── */
 .animate-fade-in-up {
-  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fadeInUp 0.35s var(--ease-out) both;
 }
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out both;
 }
 .animate-zoom-in {
-  animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: zoomIn 0.25s var(--ease-out) both;
 }
 .animate-slide-down {
-  animation: slideDown 0.2s cubic-bezier(0, 0, 0.2, 1) both;
+  animation: slideDown 0.22s var(--ease-out) both;
 }
 .animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUp 0.3s var(--ease-out) both;
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s var(--ease-out) both;
+}
+.animate-pop {
+  animation: pop 0.2s var(--ease-spring) both;
 }
 
-@keyframes fadeInUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-@keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
-@keyframes zoomIn    { from { opacity:0; transform:scale(0.96) translateY(-6px); } to { opacity:1; transform:scale(1) translateY(0); } }
-@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideUp   { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes fadeInUp   { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn     { from { opacity:0; } to { opacity:1; } }
+@keyframes zoomIn     { from { opacity:0; transform:scale(0.95) translateY(-8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+@keyframes slideDown  { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideUp    { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes slideInLeft { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+@keyframes pop         { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
 
-/* ── Page Transitions ────────────────────────────────── */
-.page-fade-enter-active,
-.page-fade-leave-active  { transition: opacity 0.18s ease, transform 0.18s ease; }
-.page-fade-enter-from    { opacity: 0; transform: translateY(6px); }
-.page-fade-leave-to      { opacity: 0; transform: translateY(-4px); }
+/* ── Page Transitions ───────────────────────────────────── */
+.page-fade-enter-active { transition: opacity 0.18s ease, transform 0.18s ease; }
+.page-fade-leave-active { transition: opacity 0.14s ease, transform 0.14s ease; }
+.page-fade-enter-from   { opacity: 0; transform: translateY(8px); }
+.page-fade-leave-to     { opacity: 0; transform: translateY(-4px); }
 
-/* ═══════════════════════════════════════════════════════════
-   REUSABLE COMPONENT PRIMITIVES
+/* ── Dropdown / Popover ─────────────────────────────────── */
+.dropdown-enter-active { transition: all 0.15s var(--ease-out); }
+.dropdown-leave-active { transition: all 0.1s ease; }
+.dropdown-enter-from   { opacity: 0; transform: scale(0.95) translateY(-6px); }
+.dropdown-leave-to     { opacity: 0; transform: scale(0.97) translateY(-4px); }
+
+/* ── Sidebar slide ──────────────────────────────────────── */
+.slide-down-enter-active { transition: all 0.22s var(--ease-out); }
+.slide-down-leave-active { transition: all 0.15s ease; }
+.slide-down-enter-from   { opacity: 0; transform: translateY(-8px); }
+.slide-down-leave-to     { opacity: 0; transform: translateY(-4px); }
+
+/* ── Label fade (sidebar collapse) ─────────────────────── */
+.label-fade-enter-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.label-fade-leave-active { transition: opacity 0.1s ease; position: absolute; }
+.label-fade-enter-from   { opacity: 0; transform: translateX(-6px); }
+.label-fade-leave-to     { opacity: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   DESIGN SYSTEM PRIMITIVES
+   Reusable utility classes — extend Tailwind component layer
 ═══════════════════════════════════════════════════════════ */
 
-/* ── Card ─────────────────────────────────────────────── */
+/* ── Card ───────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border-main);
   border-radius: 0.75rem;
 }
-
-/* ── Form Inputs ─────────────────────────────────────── */
-.input {
-  width: 100%;
-  height: 2.5rem;
-  padding: 0 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--border-main);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  transition: border-color 0.15s, box-shadow 0.15s;
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.input::placeholder { color: var(--text-faint); }
-.input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
 }
-.input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--surface-2); }
 
-/* ── Btn Primary ─────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────── */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0 1.25rem;
-  height: 2.5rem;
+  height: 2.25rem;
   background: var(--color-primary);
   color: #fff;
   font-size: 0.875rem;
@@ -192,18 +228,18 @@ html, body {
   border: none;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover  { background: var(--color-primary-dark); }
-.btn-primary:active { transform: scale(0.98); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
-/* ── Btn Secondary ───────────────────────────────────── */
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0 1.25rem;
-  height: 2.5rem;
+  height: 2.25rem;
   background: var(--surface);
   color: var(--text-main);
   font-size: 0.875rem;
@@ -212,11 +248,34 @@ html, body {
   border: 1px solid var(--border-main);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+  box-shadow: var(--shadow-xs);
 }
-.btn-secondary:hover  { background: var(--surface-2); border-color: var(--text-faint); }
-.btn-secondary:active { transform: scale(0.98); }
+.btn-secondary:hover  { background: var(--bg-app); border-color: var(--border-strong); }
+.btn-secondary:active { transform: scale(0.97); }
 
-/* ── Form Field (used in admin forms) ────────────────── */
+/* ── Inputs ─────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border-main);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder { color: var(--text-faint); }
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--bg-app); }
+
+/* Admin form field (bg-app background, smaller height) */
 .field {
   width: 100%;
   height: 2.25rem;
@@ -225,6 +284,7 @@ html, body {
   border: 1px solid var(--border-main);
   border-radius: 0.5rem;
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-main);
   font-family: var(--font-sans);
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -236,10 +296,10 @@ html, body {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 .field:disabled { opacity: 0.5; cursor: not-allowed; }
-select.field { appearance: none; cursor: pointer; }
+select.field { appearance: none; cursor: pointer; padding-right: 2rem; }
 textarea.field { height: auto; padding: 0.5rem 0.75rem; resize: none; }
 
-/* ── Status Badges ───────────────────────────────────── */
+/* ── Badges ─────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -251,3 +311,15 @@ textarea.field { height: auto; padding: 0.5rem 0.75rem; resize: none; }
   border: 1px solid transparent;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MOTION UTILITIES
+   Micro-interaction classes for interactive elements
+═══════════════════════════════════════════════════════════ */
+.interactive {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.interactive:hover  { transform: translateY(-1px); }
+.interactive:active { transform: scale(0.97); }
+
+.press-effect:active { transform: scale(0.97) !important; }
