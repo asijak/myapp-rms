@@ -33,17 +33,27 @@ export const applyToJob = catchAsync(async (req, res) => {
 // 2. Get My Applications (For the User Dashboard)
 export const getMyApplications = catchAsync(async (req, res) => {
   const applications = await Application.find({ submittedBy: req.user._id })
-    .populate("submittedTo", "title department") // Show job details
-    .sort("-createdAt");
+    .populate(
+      "submittedTo",
+      "positionTitle positionCode placeOfAssignment hiringTrack salary salaryGrade employmentType deadline status"
+    )
+    .sort("-createdAt")
+    .lean();
 
-  res.status(200).json({ status: "success", data: applications });
+  // Alias submittedTo → job for frontend compatibility
+  const data = applications.map(({ submittedTo, ...rest }) => ({
+    ...rest,
+    job: submittedTo,
+  }));
+
+  res.status(200).json({ status: "success", data });
 });
 
 // 3. Get All Applications for a Job (For HR/Admin)
 export const getJobApplications = catchAsync(async (req, res) => {
   const { jobId } = req.params;
   const applications = await Application.find({ submittedTo: jobId })
-    .populate("submittedBy", "username email avatar")
+    .populate("submittedBy", "username email avatarUrl")
     .sort("-totalScore"); // Rank by score for DepEd MSP
 
   res.status(200).json({ status: "success", data: applications });

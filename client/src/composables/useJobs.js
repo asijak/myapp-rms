@@ -1,22 +1,18 @@
 import { ref } from 'vue'
-import axios from 'axios' // Or your custom axios instance
+import apiClient from '@/api/axios'
 
 export function useJobs() {
   const jobs = ref([])
   const job = ref(null)
   const loading = ref(false)
   const error = ref(null)
-  const meta = ref({ results: 0 }) // For pagination/counts
+  const meta = ref({ results: 0 })
 
-  /**
-   * Fetch all jobs with optional filters
-   * @param {Object} params - { search, category, status, sort }
-   */
   const fetchJobs = async (params = {}) => {
     loading.value = true
     error.value = null
     try {
-      const response = await axios.get('/api/jobs', { params })
+      const response = await apiClient.get('/v1/jobs', { params })
       jobs.value = response.data.data
       meta.value.results = response.data.results
     } catch (err) {
@@ -26,14 +22,11 @@ export function useJobs() {
     }
   }
 
-  /**
-   * Fetch a single job by ID
-   */
   const fetchJobById = async (id) => {
     loading.value = true
     error.value = null
     try {
-      const response = await axios.get(`/api/jobs/${id}`)
+      const response = await apiClient.get(`/v1/jobs/${id}`)
       job.value = response.data.data
     } catch (err) {
       error.value = err.response?.data?.message || 'Job not found'
@@ -43,13 +36,11 @@ export function useJobs() {
   }
 
   return {
-    // State
     jobs,
     job,
     loading,
     error,
     meta,
-    // Actions
     fetchJobs,
     fetchJobById,
   }

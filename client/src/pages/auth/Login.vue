@@ -80,10 +80,10 @@ const handleGoogleLogin = () => {
                                 class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                                 Password
                             </label>
-                            <a href="#"
+                            <router-link to="/auth/forgot-password"
                                 class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                                 Forgot password?
-                            </a>
+                            </router-link>
                         </div>
                         <div class="relative">
                             <input v-model="form.password" :type="showPassword ? 'text' : 'password'"

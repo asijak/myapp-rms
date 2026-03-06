@@ -1,37 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import 'tailwindcss';
 
+/* ─── Design Tokens ───────────────────────────────────────────── */
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-
-  /* SOLAR HIGHLIGHTS */
   --color-solar: #eab308;
   --color-solar-hover: #ca8a04;
 
-  /* NEUTRAL WHITE PALETTE (Light Mode) */
-  --bg-app: #f8fafc; /* Soft slate tint for the page background */
-  --surface: #ffffff; /* Pure white for cards/sidebar/header */
-  --border-main: #e2e8f0; /* Light gray border */
-
-  /* TEXT */
-  --text-main: #0f172a; /* Deep slate (almost black) */
-  --text-muted: #64748b; /* Medium gray for labels */
+  --bg-app:      #f1f5f9;
+  --surface:     #ffffff;
+  --border-main: #e2e8f0;
+  --text-main:   #0f172a;
+  --text-muted:  #64748b;
 }
 
-/* DARK MODE OVERRIDES */
 .dark {
-  --bg-app: #020617; /* Pure dark navy/black */
-  --surface: #0f172a; /* Dark slate surface */
-  --border-main: #1e293b; /* Muted border */
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --bg-app:      #020617;
+  --surface:     #0f172a;
+  --border-main: #1e293b;
+  --text-main:   #f1f5f9;
+  --text-muted:  #94a3b8;
 }
 
-/* =====================================================
-   BASE STYLES (Standard CSS - No @apply)
-===================================================== */
-html,
-body {
+/* ─── Base ────────────────────────────────────────────────────── */
+html, body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
   color: var(--text-main);
@@ -40,28 +32,51 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global Transition for Dark Mode / Hover states */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Custom Scrollbar (Standard CSS) */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* ─── Scrollbar ───────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar        { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--border-main); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── Global Animations ───────────────────────────────────────── */
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+.animate-zoom-in {
+  animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-slide-down {
+  animation: slideDown 0.2s cubic-bezier(0, 0, 0.2, 1) both;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-main);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
+/* ─── Page Transitions ────────────────────────────────────────── */
+.page-fade-enter-active,
+.page-fade-leave-active { transition: opacity 0.18s ease, transform 0.18s ease; }
+.page-fade-enter-from   { opacity: 0; transform: translateY(6px); }
+.page-fade-leave-to     { opacity: 0; transform: translateY(-4px); }

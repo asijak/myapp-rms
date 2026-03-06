@@ -43,3 +43,34 @@ export const getJob = catchAsync(async (req, res, next) => {
   if (!job) return next(new AppError("Job not found", 404));
   res.status(200).json({ status: "success", data: job });
 });
+
+export const updateJob = catchAsync(async (req, res, next) => {
+  const updateData = { ...req.body };
+
+  // Re-nest qualifications if any QS fields are present
+  const qsFields = ["education", "experience", "trainings", "eligibility"];
+  const hasQs = qsFields.some((f) => updateData[f] !== undefined);
+  if (hasQs) {
+    updateData.qualifications = {};
+    qsFields.forEach((f) => {
+      if (updateData[f] !== undefined) {
+        updateData.qualifications[f] = updateData[f];
+        delete updateData[f];
+      }
+    });
+  }
+
+  const job = await Job.findByIdAndUpdate(req.params.id, updateData, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!job) return next(new AppError("Job not found", 404));
+  res.status(200).json({ status: "success", data: job });
+});
+
+export const deleteJob = catchAsync(async (req, res, next) => {
+  const job = await Job.findByIdAndDelete(req.params.id);
+  if (!job) return next(new AppError("Job not found", 404));
+  res.status(204).send();
+});

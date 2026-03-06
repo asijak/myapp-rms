@@ -1,176 +1,161 @@
 <script setup>
 import { ref, reactive, inject } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter, RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/axios'
-import { Cropper } from 'vue-advanced-cropper'
-import 'vue-advanced-cropper/dist/style.css'
 
 const route = useRoute()
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
+const toast = inject('$toast')
 
-
-const toast = inject('$toast');
-
-// UI State
+// ─── UI State ──────────────────────────────────────────────────────────────
 const showSettingsModal = ref(false)
-const showUserDropdown = ref(false)
+const showDropdown = ref(false)
 const uploading = ref(false)
 const isSaving = ref(false)
+const showCurrentPw = ref(false)
+const showNewPw = ref(false)
+const showConfirmPw = ref(false)
+const settingsTab = ref('avatar') // 'avatar' | 'password'
 
-// Cropping Logic
-const fileInput = ref(null);
-const selectedImage = ref(null);
-const cropperRef = ref(null);
+// ─── Avatar Upload ─────────────────────────────────────────────────────────
+const fileInput = ref(null)
 
-// Password Form
-const passwordData = reactive({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-})
+const triggerFileSelect = () => fileInput.value?.click()
 
-const navLinks = [
-    { name: 'Dashboard', to: '/user/dashboard', icon: 'pi-home' },
-    { name: 'My Applications', to: '/user/applications', icon: 'pi-folder-open' },
-    { name: 'Job Vacancies', to: '/vacancies', icon: 'pi-megaphone' },
-]
-
-const triggerFileSelect = () => fileInput.value.click()
-
-const onFileSelect = (event) => {
+const onFileSelect = async (event) => {
     const file = event.target.files[0]
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'error', title: 'File Too Large', text: 'Max size is 10MB' })
+        toast.fire({ icon: 'error', title: 'File Too Large', text: 'Max size is 10MB.' })
         return
     }
-
-    if (file.type === 'image/gif') {
-        uploadFile(file, false)
-    } else {
-        selectedImage.value = URL.createObjectURL(file)
-    }
-}
-
-const uploadFile = async (fileOrBlob, isCropped = false) => {
     const formData = new FormData()
-    const fileName = isCropped ? 'avatar.jpg' : fileOrBlob.name
-    formData.append('avatar', fileOrBlob, fileName)
-
+    formData.append('avatar', file, file.name)
     uploading.value = true
     try {
         const { data } = await apiClient.patch('/auth/update-avatar', formData)
-        authStore.user = {
-            ...data.user,
-            avatarUrl: `${data.user.avatarUrl}?t=${Date.now()}`
-        }
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'success', title: 'Success', text: 'Profile picture updated' })
-        selectedImage.value = null
+        authStore.user = { ...data.user, avatarUrl: `${data.user.avatarUrl}?t=${Date.now()}` }
+        toast.fire({ icon: 'success', title: 'Photo updated' })
     } catch (err) {
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'error', title: 'Upload Failed', text: err.response?.data?.message || 'Server error' })
+        toast.fire({ icon: 'error', title: 'Upload Failed', text: err.response?.data?.message || 'Server error.' })
     } finally {
         uploading.value = false
         if (fileInput.value) fileInput.value.value = ''
     }
 }
 
-const uploadCroppedImage = () => {
-    const result = cropperRef.value.getResult()
-    if (!result?.canvas) return
-    result.canvas.toBlob(blob => blob && uploadFile(blob, true), 'image/jpeg', 0.9)
-}
+// ─── Password Change ────────────────────────────────────────────────────────
+const passwordData = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
 const handlePasswordUpdate = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'warning', title: 'Validation Error', text: 'Passwords do not match' })
+        toast.fire({ icon: 'warning', title: 'Mismatch', text: 'Passwords do not match.' })
         return
     }
-
+    if (passwordData.newPassword.length < 8) {
+        toast.fire({ icon: 'warning', title: 'Too short', text: 'Password must be at least 8 characters.' })
+        return
+    }
     isSaving.value = true
     try {
         await apiClient.patch('/auth/update-password', {
             currentPassword: passwordData.currentPassword,
-            newPassword: passwordData.newPassword
+            newPassword: passwordData.newPassword,
         })
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'success', title: 'Success', text: 'Password updated' })
+        toast.fire({ icon: 'success', title: 'Password updated' })
         showSettingsModal.value = false
         Object.assign(passwordData, { currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
-        // --- NEW: SweetAlert Syntax ---
-        toast.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Update failed' })
+        toast.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Update failed.' })
     } finally {
         isSaving.value = false
     }
 }
-</script>
-<template>
-    <div class="min-h-screen flex flex-col font-inter text-sm text-slate-600 antialiased"
-        style="background-image: linear-gradient(rgba(248, 250, 252, 0.50), rgba(248, 250, 252, 0.50)), url('https://image2url.com/r2/default/images/1772169455473-54bb76c7-1d32-4152-8411-9e38daab5695.png'); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;">
 
-        <header
-            class="sticky top-0 z-30 bg-[var(--surface-0)]/90 backdrop-blur-md shadow-[var(--shadow-sm)] h-[64px] flex items-center px-4 sm:px-6 lg:px-8 justify-between transition-all">
+const openSettings = (tab = 'avatar') => {
+    settingsTab.value = tab
+    showDropdown.value = false
+    showSettingsModal.value = true
+}
+
+// ─── Nav ────────────────────────────────────────────────────────────────────
+const navLinks = [
+    { name: 'Dashboard', to: '/user/dashboard', icon: 'pi-home' },
+    { name: 'My Applications', to: '/user/applications', icon: 'pi-folder-open' },
+    { name: 'Job Vacancies', to: '/vacancies', icon: 'pi-briefcase' },
+]
+</script>
+
+<template>
+    <div class="min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--text-main)] font-sans antialiased">
+
+        <!-- ── Header ─────────────────────────────────────────────────── -->
+        <header class="sticky top-0 z-30 bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border-main)] h-16 flex items-center px-4 sm:px-6 lg:px-8 justify-between">
+
+            <!-- Logo -->
             <div class="flex items-center gap-8">
                 <router-link to="/" class="flex items-center gap-3 group">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-[var(--shadow-primary)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
-                        <i class="pi pi-file-edit text-white text-lg"></i>
+                    <div class="w-9 h-9 rounded-lg bg-[var(--text-main)] flex items-center justify-center">
+                        <i class="pi pi-shield text-[var(--surface)] text-base"></i>
                     </div>
-                    <span class="text-[15px] font-bold tracking-tight text-slate-800">
-                        RSP <span class="text-sky-600 font-medium">Portal</span>
+                    <span class="text-sm font-bold tracking-tight text-[var(--text-main)] hidden sm:block">
+                        RSP <span class="font-normal text-[var(--text-muted)]">Portal</span>
                     </span>
                 </router-link>
 
+                <!-- Nav Links -->
                 <nav class="hidden md:flex items-center gap-1">
-                    <a v-for="link in navLinks" :key="link.name" @click.prevent="handleNavigation(link)"
-                        class="cursor-pointer flex items-center gap-2 px-4 h-14 rounded-md text-slate-500 font-semibold text-[13px] transition-all hover:text-sky-600 hover:bg-slate-50"
-                        :class="{ 'text-sky-600 bg-sky-50/50': route.path === link.to && link.to }">
-                        <i class="pi text-[11px]" :class="link.icon"></i>
-                        <span>{{ link.name }}</span>
-                    </a>
+                    <router-link v-for="link in navLinks" :key="link.to" :to="link.to"
+                        class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                        :class="route.path === link.to
+                            ? 'bg-[var(--bg-app)] text-[var(--text-main)]'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)]'">
+                        <i class="pi text-xs" :class="link.icon"></i>
+                        {{ link.name }}
+                    </router-link>
                 </nav>
             </div>
 
+            <!-- Right: User Menu -->
             <div class="flex items-center gap-3">
-                <Button icon="pi pi-bell" severity="secondary" variant="text" size="small"
-                    class="!w-9 !h-9 rounded-full" />
-
-                <div class="h-8 w-px bg-slate-200"></div>
-
-                <div class="relative group">
-                    <button
-                        class="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-100 transition-all border border-transparent hover:border-slate-200">
-                        <Avatar :image="authStore.user?.avatarUrl" shape="circle"
-                            class="!w-8 !h-8 border border-slate-200 shadow-sm" />
-                        <i class="pi pi-chevron-down text-[10px] text-slate-400"></i>
+                <!-- Avatar + Dropdown -->
+                <div class="relative">
+                    <button @click="showDropdown = !showDropdown"
+                        class="flex items-center gap-2 p-1 pl-2 rounded-full hover:bg-[var(--bg-app)] transition-colors border border-transparent hover:border-[var(--border-main)]">
+                        <span class="hidden sm:block text-sm font-medium text-[var(--text-main)] max-w-[120px] truncate">
+                            {{ authStore.user?.username }}
+                        </span>
+                        <img :src="authStore.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user?.username || 'U')}&background=E2E8F0&color=334155&bold=true`"
+                            :alt="authStore.user?.username"
+                            class="w-8 h-8 rounded-full object-cover border border-[var(--border-main)]" />
+                        <i class="pi pi-chevron-down text-[10px] text-[var(--text-muted)]"></i>
                     </button>
 
-                    <div
-                        class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-1 group-hover:translate-y-0 transition-all duration-200 z-50 overflow-hidden">
-                        <div class="p-4 border-b border-slate-50 bg-slate-50/50">
-                            <p class="text-[13px] font-bold text-slate-800 truncate capitalize">{{
-                                authStore.user?.username }}</p>
-                            <p class="text-[11px] text-slate-500 truncate">{{ authStore.user?.email }}</p>
+                    <!-- Dropdown -->
+                    <div v-if="showDropdown"
+                        class="absolute right-0 mt-2 w-56 bg-[var(--surface)] rounded-xl shadow-xl border border-[var(--border-main)] z-50 overflow-hidden animate-fade-in"
+                        v-click-outside="() => showDropdown = false">
+
+                        <div class="px-4 py-3 border-b border-[var(--border-main)] bg-[var(--bg-app)]">
+                            <p class="text-sm font-bold text-[var(--text-main)] truncate capitalize">{{ authStore.user?.username }}</p>
+                            <p class="text-xs text-[var(--text-muted)] truncate">{{ authStore.user?.email }}</p>
                         </div>
 
-                        <div class="p-1.5">
-                            <button @click="showSettingsModal = true"
-                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors">
-                                <i class="pi pi-cog text-[14px]"></i>
-                                <span class="text-[12px] font-semibold">Settings</span>
+                        <div class="p-1.5 flex flex-col gap-0.5">
+                            <button @click="openSettings('avatar')"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors text-left">
+                                <i class="pi pi-user text-[var(--text-muted)] text-sm"></i> Profile Settings
                             </button>
-
-                            <div class="h-px bg-slate-100 my-1"></div>
-
-                            <button @click="authStore.logout"
-                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
-                                <i class="pi pi-power-off text-[14px]"></i>
-                                <span class="text-[12px] font-bold">Logout</span>
+                            <button @click="openSettings('password')"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors text-left">
+                                <i class="pi pi-lock text-[var(--text-muted)] text-sm"></i> Change Password
+                            </button>
+                            <div class="h-px bg-[var(--border-main)] my-1"></div>
+                            <button @click="authStore.logout()"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors text-left">
+                                <i class="pi pi-power-off text-sm"></i> Logout
                             </button>
                         </div>
                     </div>
@@ -178,119 +163,151 @@ const handlePasswordUpdate = async () => {
             </div>
         </header>
 
-        <div class="bg-white/80 backdrop-blur-sm border-b border-slate-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    <span>Applicant Workspace</span>
-                    <i class="pi pi-angle-right text-[8px]"></i>
-
-                    <span class="text-sky-600">{{ $route.name || 'Overview' }}</span>
-
-                </div>
+        <!-- ── Breadcrumb ─────────────────────────────────────────────── -->
+        <div class="bg-[var(--surface)] border-b border-[var(--border-main)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                <i class="pi pi-home text-[9px]"></i>
+                <span>Applicant Workspace</span>
+                <i class="pi pi-angle-right text-[9px]"></i>
+                <span class="text-[var(--text-main)]">{{ $route.name || 'Overview' }}</span>
             </div>
         </div>
 
-        <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
-            <slot />
+        <!-- ── Page Content ───────────────────────────────────────────── -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            <RouterView v-slot="{ Component }">
+                <transition name="page-fade" mode="out-in">
+                    <KeepAlive>
+                        <component :is="Component" :key="$route.name" />
+                    </KeepAlive>
+                </transition>
+            </RouterView>
         </main>
 
-        <Dialog v-model:visible="showSettingsModal" modal header="Account Settings" :style="{ width: '30rem' }"
-            class="font-inter">
-            <div v-if="authStore.user">
-                <div v-if="selectedImage" class="space-y-4 pt-2">
-                    <div class="border rounded-xl overflow-hidden bg-slate-900 h-64 shadow-inner">
-                        <cropper ref="cropperRef" class="h-full" :src="selectedImage"
-                            :stencil-props="{ aspectRatio: 1 }" />
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <Button label="Cancel" severity="secondary" text @click="selectedImage = null"
-                            class="!text-xs" />
-                        <Button label="Upload Photo" :loading="uploading" severity="primary" @click="uploadCroppedImage"
-                            class="!text-xs !bg-sky-600 !border-none px-6" />
-                    </div>
-                </div>
-
-                <div v-else class="space-y-6 pt-4">
-                    <div class="flex flex-col items-center gap-3">
-                        <div class="relative group cursor-pointer" @click="triggerFileSelect">
-                            <Avatar :image="authStore.user?.avatarUrl" shape="circle"
-                                class="!w-20 !h-20 border-2 border-white shadow-md bg-slate-100" />
-                            <div
-                                class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                                <i v-if="!uploading" class="pi pi-camera text-white"></i>
-                                <i v-else class="pi pi-spin pi-spinner text-white"></i>
-                            </div>
-                        </div>
-                        <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="onFileSelect" />
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">
-                            {{ uploading ? 'Uploading Animation...' : 'Change Profile Picture' }}
-                        </p>
-                    </div>
-
-                    <div class="h-px bg-slate-100"></div>
-
-                    <div class="space-y-4">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Security Settings</p>
-
-                        <div v-if="authStore.user?.googleId"
-                            class="p-4 bg-sky-50 rounded-xl border border-sky-100 flex items-start gap-3">
-                            <i class="pi pi-google text-sky-600 mt-0.5"></i>
-                            <p class="text-[11px] text-sky-700 leading-relaxed">
-                                Your account is secured via Google. Passwords are managed in your Google security
-                                settings.
-                            </p>
-                        </div>
-
-                        <div v-else class="space-y-3">
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Current
-                                    Password</label>
-                                <InputText v-model="passwordData.currentPassword" type="password" size="small"
-                                    class="!bg-slate-50" />
-                            </div>
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-tight">New
-                                    Password</label>
-                                <InputText v-model="passwordData.newPassword" type="password" size="small"
-                                    class="!bg-slate-50" />
-                            </div>
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Confirm New
-                                    Password</label>
-                                <InputText v-model="passwordData.confirmPassword" type="password" size="small"
-                                    class="!bg-slate-50" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-4">
-                        <Button label="Close" severity="secondary" text @click="showSettingsModal = false"
-                            class="!text-xs" />
-                        <Button v-if="!authStore.user?.googleId" label="Update Security" :loading="isSaving"
-                            severity="primary" @click="handlePasswordUpdate"
-                            class="!text-xs !bg-sky-600 !border-none px-6" />
-                    </div>
-                </div>
-            </div>
-        </Dialog>
-
-        <footer class="border-t border-slate-200 bg-white mt-auto">
-            <div
-                class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                <p>© 2026 DepEd Guihulngan Division</p>
-                <div class="flex gap-6">
-                    <a href="#" class="hover:text-sky-600 transition-colors">Privacy</a>
-                    <a href="#" class="hover:text-sky-600 transition-colors">Support</a>
+        <!-- ── Footer ────────────────────────────────────────────────── -->
+        <footer class="border-t border-[var(--border-main)] bg-[var(--surface)] mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-[var(--text-muted)]">
+                <p>© {{ new Date().getFullYear() }} DepEd Division of Guihulngan City</p>
+                <div class="flex gap-5">
+                    <a href="#" class="hover:text-[var(--text-main)] transition-colors">Privacy</a>
+                    <a href="#" class="hover:text-[var(--text-main)] transition-colors">Support</a>
                 </div>
             </div>
         </footer>
     </div>
+
+    <!-- ── Settings Modal ─────────────────────────────────────────────────── -->
+    <Teleport to="body">
+        <div v-if="showSettingsModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
+            @click.self="showSettingsModal = false">
+
+            <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-zoom-in">
+
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between">
+                    <h3 class="text-base font-bold text-[var(--text-main)]">Account Settings</h3>
+                    <button @click="showSettingsModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-main)]">
+                        <i class="pi pi-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-[var(--border-main)] bg-[var(--bg-app)]">
+                    <button v-for="tab in ['avatar', 'password']" :key="tab" @click="settingsTab = tab"
+                        :class="['flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-colors',
+                            settingsTab === tab
+                                ? 'text-[var(--text-main)] border-b-2 border-[var(--text-main)] bg-[var(--surface)]'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]']">
+                        <i :class="['pi mr-1.5 text-[11px]', tab === 'avatar' ? 'pi-user' : 'pi-lock']"></i>
+                        {{ tab === 'avatar' ? 'Profile Photo' : 'Password' }}
+                    </button>
+                </div>
+
+                <!-- Tab: Avatar -->
+                <div v-if="settingsTab === 'avatar'" class="p-6 flex flex-col items-center gap-4">
+                    <div class="relative group cursor-pointer" @click="triggerFileSelect">
+                        <img :src="authStore.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user?.username || 'U')}&background=E2E8F0&color=334155&bold=true`"
+                            class="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-main)]" />
+                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                            <i v-if="!uploading" class="pi pi-camera text-white text-xl"></i>
+                            <i v-else class="pi pi-spin pi-spinner text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="onFileSelect" />
+                    <button @click="triggerFileSelect" :disabled="uploading"
+                        class="h-9 px-5 rounded-lg bg-[var(--text-main)] text-[var(--surface)] text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
+                        <i v-if="uploading" class="pi pi-spin pi-spinner text-xs"></i>
+                        <i v-else class="pi pi-upload text-xs"></i>
+                        {{ uploading ? 'Uploading...' : 'Upload Photo' }}
+                    </button>
+                    <p class="text-xs text-[var(--text-muted)]">JPG, PNG, GIF · Max 10MB</p>
+                </div>
+
+                <!-- Tab: Password -->
+                <div v-if="settingsTab === 'password'" class="p-6 flex flex-col gap-4">
+                    <div v-if="authStore.user?.googleId"
+                        class="flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-700">
+                        <i class="pi pi-info-circle mt-0.5 flex-shrink-0"></i>
+                        <p class="text-sm">Your account uses Google Sign-In. Manage your password in Google account settings.</p>
+                    </div>
+                    <template v-else>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Current Password</label>
+                            <div class="relative">
+                                <input v-model="passwordData.currentPassword" :type="showCurrentPw ? 'text' : 'password'" placeholder="••••••••"
+                                    class="w-full h-10 pl-3 pr-10 rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--text-main)]/10 focus:border-[var(--text-main)]" />
+                                <button type="button" @click="showCurrentPw = !showCurrentPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                                    <i :class="['pi text-sm', showCurrentPw ? 'pi-eye-slash' : 'pi-eye']"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">New Password</label>
+                            <div class="relative">
+                                <input v-model="passwordData.newPassword" :type="showNewPw ? 'text' : 'password'" placeholder="Min. 8 characters"
+                                    class="w-full h-10 pl-3 pr-10 rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--text-main)]/10 focus:border-[var(--text-main)]" />
+                                <button type="button" @click="showNewPw = !showNewPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                                    <i :class="['pi text-sm', showNewPw ? 'pi-eye-slash' : 'pi-eye']"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Confirm Password</label>
+                            <div class="relative">
+                                <input v-model="passwordData.confirmPassword" :type="showConfirmPw ? 'text' : 'password'" placeholder="••••••••"
+                                    class="w-full h-10 pl-3 pr-10 rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--text-main)]/10 focus:border-[var(--text-main)]" />
+                                <button type="button" @click="showConfirmPw = !showConfirmPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                                    <i :class="['pi text-sm', showConfirmPw ? 'pi-eye-slash' : 'pi-eye']"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button @click="handlePasswordUpdate" :disabled="isSaving"
+                            class="w-full h-10 mt-2 bg-[var(--text-main)] text-[var(--surface)] text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                            <i v-if="isSaving" class="pi pi-spin pi-spinner text-sm"></i>
+                            <i v-else class="pi pi-save text-sm"></i>
+                            {{ isSaving ? 'Saving...' : 'Update Password' }}
+                        </button>
+                    </template>
+                </div>
+
+            </div>
+        </div>
+    </Teleport>
 </template>
 
 <style scoped>
-@reference "@/assets/main.css";
+.page-fade-enter-active,
+.page-fade-leave-active { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.page-fade-enter-from { opacity: 0; transform: translateY(6px); }
+.page-fade-leave-to { opacity: 0; transform: translateY(-6px); }
 
-.font-inter {
-    font-family: 'Inter', sans-serif;
+.animate-fade-in { animation: fadeIn 0.15s ease-out; }
+.animate-zoom-in { animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>

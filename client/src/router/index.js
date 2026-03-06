@@ -30,6 +30,18 @@ const routes = [
     props: (route) => ({ email: route.query.email }),
     meta: { guestOnly: true },
   },
+  {
+    path: '/auth/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/pages/auth/ForgotPassword.vue'),
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/auth/reset-password/:token',
+    name: 'ResetPassword',
+    component: () => import('@/pages/auth/ResetPassword.vue'),
+    meta: { guestOnly: true },
+  },
 
   // ==========================================
   // APPLICANT / USER ROUTES
@@ -41,8 +53,13 @@ const routes = [
   },
   {
     path: '/user',
+    component: () => import('@/layouts/UserLayout.vue'),
     meta: { requiresAuth: true, role: 'user' },
     children: [
+      {
+        path: '',
+        redirect: '/user/dashboard',
+      },
       {
         path: 'dashboard',
         name: 'User Dashboard',

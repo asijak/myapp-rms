@@ -12,11 +12,26 @@ export const jobSchema = Joi.object({
   salary: Joi.number().positive().required(),
   salaryGrade: Joi.number().integer().min(1).max(33).required(),
   placeOfAssignment: Joi.string().required(),
-  category: Joi.string().valid(
-    "permanent",
-    "contractual",
-    "coterminous",
-    "casual",
-  ),
+  employmentType: Joi.string().valid("permanent", "contractual", "job order", "casual"),
+  hiringTrack: Joi.string().valid("teaching", "teaching_related", "non_teaching").required(),
   status: Joi.string().valid("draft", "published", "closed", "archived"),
+  deadline: Joi.date().allow(null, ""),
+});
+
+export const jobUpdateSchema = Joi.object({
+  positionTitle: Joi.string().min(3),
+  positionCode: Joi.string(),
+  description: Joi.string(),
+  education: Joi.string(),
+  experience: Joi.string(),
+  trainings: Joi.string(),
+  eligibility: Joi.string(),
+  itemNumbers: Joi.array().items(Joi.string()).min(1),
+  salary: Joi.number().positive(),
+  salaryGrade: Joi.number().integer().min(1).max(33),
+  placeOfAssignment: Joi.string(),
+  employmentType: Joi.string().valid("permanent", "contractual", "job order", "casual"),
+  hiringTrack: Joi.string().valid("teaching", "teaching_related", "non_teaching"),
+  status: Joi.string().valid("draft", "published", "closed", "archived"),
+  deadline: Joi.date().allow(null, ""),
 });
