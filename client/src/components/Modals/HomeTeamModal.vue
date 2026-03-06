@@ -15,12 +15,12 @@ defineEmits(['update:visible']);
 // ==============================================
 const modalAdjustment = reactive({
     profilePicSize: 170,      
-    profilePicRounding: 9999, // 🪄 Set back to 9999 for a perfect circle
+    profilePicRounding: 9999, // 9999 for circle
     headerHeight: 144,        
     
     // X Button Positioning
-    closeButtonTop: -100,       
-    closeButtonRight: -220,     
+    closeButtonTop: 24,       
+    closeButtonRight: 24,     
 });
 </script>
 
@@ -32,11 +32,11 @@ const modalAdjustment = reactive({
         modal 
         dismissableMask 
         :showHeader="false" 
-        contentClass="p-0 rounded-none overflow-hidden shadow-[0_32px_100px_-20px_rgba(0,0,0,0.6)] border border-slate-800" 
+        contentClass="p-0 rounded-2xl overflow-hidden shadow-[0_32px_100px_-20px_rgba(0,0,0,0.6)] border border-slate-800" 
         class="max-w-sm w-full mx-4" 
         style="font-family: 'Avenir', sans-serif;"
     >
-        <div class="bg-slate-900 text-slate-100 text-center flex flex-col rounded-none">
+        <div class="bg-slate-900 text-slate-100 text-center flex flex-col rounded-2xl">
             <div 
                 class="w-full flex items-end justify-center relative bg-gradient-to-b from-slate-800/50 to-transparent"
                 :style="{ height: modalAdjustment.headerHeight + 'px' }"

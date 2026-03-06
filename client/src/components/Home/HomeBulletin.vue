@@ -419,7 +419,7 @@ const turnPage = (direction) => {
     transform: translateY(60px);
     pointer-events: none;
     visibility: hidden;
-    transition: opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 1.5s;
+    transition: opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 2.5s;
 }
 
 .bulletin-drawer.is-open {
