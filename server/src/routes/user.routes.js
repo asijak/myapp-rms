@@ -20,4 +20,13 @@ router.patch(
   userController.toggleUserStatus,
 );
 
+// 3. Assign Roles to User
+router.patch("/:id/roles", requirePermission("user_manage"), userController.updateUserRoles);
+
+// 4. Reset User Password (Admin)
+router.patch("/:id/reset-password", requirePermission("user_manage"), userController.resetUserPassword);
+
+// 5. Delete User
+router.delete("/:id", requirePermission("user_manage"), userController.deleteUser);
+
 export default router;

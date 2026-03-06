@@ -19,12 +19,13 @@ export const registerUserLogic = async (userData) => {
   let user = await User.findOne({ email });
 
   if (user) {
-    if (user.roles.length === 0) user.roles = [targetRole._id];
+    if (user.isVerified) {
+      throw new Error("An account with this email already exists. Please log in.");
+    }
+
+    // Unverified user: resend OTP only, do not overwrite password
     user.otp = { code: hashedOtp, expiresAt };
-
-    if (password) user.password = password;
-
-    await user.save();
+    await user.save({ validateBeforeSave: false });
   } else {
     user = await User.create({
       ...userData,
@@ -73,9 +74,6 @@ export const loginUserLogic = async (email, password) => {
   if (!user.isVerified) {
     throw new Error("Please verify your account via OTP first");
   }
-
-  user.lastLogin = new Date();
-  await user.save({ validateBeforeSave: false });
 
   return user;
 };

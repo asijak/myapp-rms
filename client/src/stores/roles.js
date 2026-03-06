@@ -27,7 +27,6 @@ export const useRoleStore = defineStore('roleStore', {
       return await apiClient.post('/v1/roles', roleData)
     },
     async deleteRole(id) {
-      // 👇 And here
       return await apiClient.delete(`/v1/roles/${id}`)
     },
   },

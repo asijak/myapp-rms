@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
-// 🪄 Accepts the HTTP Status Code as a prop (defaults to 404 if none is provided)
 const props = defineProps({
     code: {
         type: [String, Number],
@@ -11,8 +11,9 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const authStore = useAuthStore();
+const dashboardRoute = computed(() => authStore.dashboardRoute);
 
-// 🪄 The Brains: Automatically sets the content based on the error code
 const errorDetails = computed(() => {
     const code = Number(props.code);
     switch (code) {
@@ -34,7 +35,7 @@ const errorDetails = computed(() => {
 });
 
 const goBack = () => {
-    router.back(); // Goes to the previous page in history
+    router.back();
 };
 </script>
 
@@ -72,7 +73,7 @@ const goBack = () => {
                         <i class="pi pi-arrow-left text-[10px]"></i> Go Back
                     </button>
 
-                    <router-link to="/admin/dashboard"
+                    <router-link :to="dashboardRoute"
                         class="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#020617] text-white font-bold text-xs uppercase tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-900/20 hover:-translate-y-0.5 transition-all outline-none flex items-center justify-center gap-2">
                         <i class="pi pi-home text-[10px]"></i> Dashboard
                     </router-link>
