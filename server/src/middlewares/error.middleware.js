@@ -10,7 +10,7 @@ const errorMiddleware = (err, req, res, next) => {
   if (err.code === 11000) {
     statusCode = 400;
     status = "fail";
-    const field = Object.keys(err.keyValue)[0];
+    const field = err.keyValue ? Object.keys(err.keyValue)[0] : "Field";
     message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`;
   }
 

@@ -59,7 +59,6 @@ userSchema.virtual("avatarUrl").get(function () {
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   if (!this.password) return;
 
   this.password = await bcrypt.hash(this.password, 12);
@@ -109,9 +108,7 @@ userSchema.pre("findOneAndDelete", async function () {
     (user.username === "super_admin" ||
       user.email === "superadmin@deped.gov.ph")
   ) {
-    throw new Error(
-      "This is a protected system account and cannot be deleted.",
-    );
+    throw new Error("This is a protected system account and cannot be deleted.");
   }
 });
 export default mongoose.model("User", userSchema);

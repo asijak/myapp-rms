@@ -56,7 +56,7 @@ const calSchema = new mongoose.Schema(
 /**
  * 🔹 ADVANCED SORTING & TIE-BREAKING LOGIC
  */
-calSchema.pre("save", function (next) {
+calSchema.pre("save", async function () {
   if (this.rankings && this.rankings.length > 0) {
     this.rankings.sort((a, b) => {
       // 1. Primary Sort: Total Points (Descending)
@@ -81,7 +81,6 @@ calSchema.pre("save", function (next) {
       }
     });
   }
-  next();
 });
 
 export default mongoose.model("CAL", calSchema);

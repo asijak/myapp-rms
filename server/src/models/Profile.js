@@ -42,6 +42,16 @@ const profileSchema = new mongoose.Schema(
       country: { type: String, default: "Philippines" },
     },
 
+    // --- Eligibility ---
+    eligibility: [
+      {
+        name:        { type: String, trim: true },
+        placeOfExam: { type: String, trim: true },
+        dateOfExam:  Date,
+        rating:      { type: String, trim: true },
+      },
+    ],
+
     // --- HR Evidence (Snapshot Sources) ---
     education: [
       {

@@ -7,6 +7,11 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const systemUploadDir = "public/uploads/system";
+if (!fs.existsSync(systemUploadDir)) {
+  fs.mkdirSync(systemUploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -43,5 +48,20 @@ export const uploadAvatar = multer({
   limits: {
     fileSize: 10 * 1024 * 1024,
   },
+  fileFilter: fileFilter,
+});
+
+const systemStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, systemUploadDir),
+  filename: (req, file, cb) => {
+    let ext = path.extname(file.originalname).toLowerCase();
+    if (!ext) ext = file.mimetype === "image/png" ? ".png" : ".jpg";
+    cb(null, `logo-${Date.now()}${ext}`);
+  },
+});
+
+export const uploadSystemLogo = multer({
+  storage: systemStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: fileFilter,
 });

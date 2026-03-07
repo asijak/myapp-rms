@@ -16,13 +16,13 @@ const isHovered = ref(false)
             <AdminTopbar v-model:isCollapsed="isCollapsed" />
 
             <main class="flex-1 overflow-y-auto p-6 lg:p-8 custom-scrollbar">
-                <router-view v-slot="{ Component }">
-                    <transition name="page-fade" mode="out-in">
-                        <div class="max-w-[88rem] mx-auto w-full">
-                            <component :is="Component" />
-                        </div>
-                    </transition>
-                </router-view>
+                <div class="max-w-[88rem] mx-auto w-full">
+                    <router-view v-slot="{ Component, route }">
+                        <transition name="page-fade" mode="out-in">
+                            <component :is="Component" :key="route.path" />
+                        </transition>
+                    </router-view>
+                </div>
             </main>
         </div>
     </div>

@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
     isCollapsed: Boolean,
@@ -10,9 +10,10 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:isHovered'])
 
-const route     = useRoute()
-const authStore = useAuthStore()
-const active    = ref(null)
+const route         = useRoute()
+const authStore     = useAuthStore()
+const settingsStore = useSettingsStore()
+const active        = ref(null)
 
 const navGroups = [
     {
@@ -30,8 +31,9 @@ const navGroups = [
                 sub: [
                     { label: 'Job Vacancies',      icon: 'file-plus',  to: '/admin/vacancies'   },
                     { label: 'Applicants',         icon: 'users',      to: '/admin/applicants'  },
-                    { label: 'Evaluations',        icon: 'list-check', to: '/admin/evaluations' },
-                    { label: 'Qualified Registry', icon: 'verified',   to: '/admin/rqa'         },
+                    { label: 'Evaluations',        icon: 'list-check',  to: '/admin/evaluations' },
+                    { label: 'Rubrics',            icon: 'percentage',  to: '/admin/rubrics'     },
+                    { label: 'Qualified Registry', icon: 'verified',    to: '/admin/rqa'         },
                 ],
             },
         ],
@@ -86,13 +88,18 @@ const isSubActive = (item) => item.sub?.some(s => s.to === route.path)
 
         <!-- ── Brand ──────────────────────────────────────────── -->
         <div class="h-16 flex items-center px-4 border-b border-white/5 shrink-0 gap-3 overflow-hidden">
-            <div class="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/50">
-                <i class="pi pi-shield text-white text-base" aria-hidden="true"></i>
+            <div class="w-9 h-9 rounded-xl shrink-0 overflow-hidden"
+                :class="settingsStore.resolvedLogoUrl ? '' : 'bg-[var(--color-primary)] flex items-center justify-center shadow-lg shadow-blue-900/50'">
+                <img v-if="settingsStore.resolvedLogoUrl"
+                    :src="settingsStore.resolvedLogoUrl"
+                    alt="System Logo"
+                    class="w-full h-full object-cover" />
+                <i v-else class="pi pi-shield text-white text-base" aria-hidden="true"></i>
             </div>
             <Transition name="label-fade">
                 <div v-if="expanded" class="flex flex-col leading-tight overflow-hidden">
-                    <span class="text-white font-bold text-sm tracking-tight whitespace-nowrap">DepEd GNC</span>
-                    <span class="text-white/40 text-[10px] font-semibold tracking-widest uppercase whitespace-nowrap">RSP Portal</span>
+                    <span class="text-white font-bold text-sm tracking-tight whitespace-nowrap">{{ settingsStore.systemName }}</span>
+                    <span class="text-white/40 text-[10px] font-semibold tracking-widest uppercase whitespace-nowrap">{{ settingsStore.systemSubName }}</span>
                 </div>
             </Transition>
         </div>
@@ -202,10 +209,10 @@ const isSubActive = (item) => item.sub?.some(s => s.to === route.path)
         <div class="p-3 border-t border-white/5 shrink-0">
             <Transition name="label-fade">
                 <div v-if="expanded" class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-white/5 transition-colors cursor-default">
-                    <BaseAvatar
-                        :src="authStore.user?.avatarUrl"
-                        :name="authStore.user?.username"
-                        size="sm" />
+                    <div class="w-8 h-8 rounded-full shrink-0 overflow-hidden bg-[var(--color-primary)] flex items-center justify-center">
+                        <img v-if="authStore.user?.avatarUrl" :src="authStore.user?.avatarUrl" :alt="authStore.user?.username" class="w-full h-full object-cover" />
+                        <span v-else class="text-[11px] font-bold text-white uppercase">{{ authStore.user?.username?.charAt(0) || 'U' }}</span>
+                    </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-[12px] font-semibold text-white/80 truncate capitalize">{{ authStore.user?.username }}</p>
                         <p class="text-[10px] text-white/30 truncate">{{ authStore.user?.email }}</p>
@@ -214,10 +221,10 @@ const isSubActive = (item) => item.sub?.some(s => s.to === route.path)
                 </div>
             </Transition>
             <div v-if="!expanded" class="flex justify-center py-1">
-                <BaseAvatar
-                    :src="authStore.user?.avatarUrl"
-                    :name="authStore.user?.username"
-                    size="sm" />
+                <div class="w-8 h-8 rounded-full shrink-0 overflow-hidden bg-[var(--color-primary)] flex items-center justify-center">
+                    <img v-if="authStore.user?.avatarUrl" :src="authStore.user?.avatarUrl" :alt="authStore.user?.username" class="w-full h-full object-cover" />
+                    <span v-else class="text-[11px] font-bold text-white uppercase">{{ authStore.user?.username?.charAt(0) || 'U' }}</span>
+                </div>
             </div>
         </div>
     </aside>

@@ -66,6 +66,11 @@ const routes = [
         component: () => import('@/pages/user/Applications.vue'),
       },
       {
+        path: 'profile',
+        name: 'My Profile',
+        component: () => import('@/pages/user/Profile.vue'),
+      },
+      {
         path: '/vacancies',
         name: 'Job Vacancies',
         component: () => import('@/pages/user/Vacancies.vue'),
@@ -126,6 +131,11 @@ const routes = [
         path: 'evaluations',
         name: 'Evaluations',
         component: () => import('@/pages/admin/Evaluations.vue'),
+      },
+      {
+        path: 'rubrics',
+        name: 'Rubrics',
+        component: () => import('@/pages/admin/Rubrics.vue'),
       },
       {
         path: 'rqa',

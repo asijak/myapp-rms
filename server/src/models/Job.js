@@ -66,11 +66,10 @@ const jobSchema = new mongoose.Schema(
 );
 
 // 🔹 Sync Vacancy count based on Item Numbers
-jobSchema.pre("save", function (next) {
+jobSchema.pre("save", async function () {
   if (this.itemNumbers) {
     this.noOfVacancy = this.itemNumbers.length;
   }
-  next();
 });
 
 export default mongoose.model("Job", jobSchema);

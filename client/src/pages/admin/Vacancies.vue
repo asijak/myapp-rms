@@ -239,72 +239,77 @@ const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-PH', { year: 'n
 const isExpired = (deadline) => deadline && new Date(deadline) < new Date()
 
 const statusConfig = {
-    draft: { label: 'Draft', class: 'bg-slate-100 text-slate-600 border-slate-200' },
-    published: { label: 'Published', class: 'bg-green-100 text-green-700 border-green-200' },
-    closed: { label: 'Closed', class: 'bg-red-100 text-red-600 border-red-200' },
-    archived: { label: 'Archived', class: 'bg-amber-100 text-amber-700 border-amber-200' },
+    draft:     { label: 'Draft',     cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+    published: { label: 'Published', cls: 'bg-green-50 text-green-700 border-green-200' },
+    closed:    { label: 'Closed',    cls: 'bg-red-50 text-red-600 border-red-200' },
+    archived:  { label: 'Archived', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
 }
 
 const trackConfig = {
-    teaching: { label: 'Teaching', class: 'bg-blue-100 text-blue-700 border-blue-200' },
-    teaching_related: { label: 'Teaching-Related', class: 'bg-purple-100 text-purple-700 border-purple-200' },
-    non_teaching: { label: 'Non-Teaching', class: 'bg-orange-100 text-orange-700 border-orange-200' },
-}
-
-const nextStatuses = (current) => {
-    const all = ['draft', 'published', 'closed', 'archived']
-    return all.filter(s => s !== current)
+    teaching:         { label: 'Teaching',         cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+    teaching_related: { label: 'Teaching-Related', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
+    non_teaching:     { label: 'Non-Teaching',     cls: 'bg-orange-50 text-orange-700 border-orange-200' },
 }
 
 const sortIcon = (field) => {
-    if (sortBy.value !== field) return 'pi-sort'
-    return sortDir.value === 'asc' ? 'pi-sort-up' : 'pi-sort-down'
+    if (sortBy.value !== field) return 'pi-sort opacity-50'
+    return sortDir.value === 'asc' ? 'pi-sort-up text-[var(--color-primary)]' : 'pi-sort-down text-[var(--color-primary)]'
 }
 </script>
 
 <template>
     <div class="flex flex-col gap-6">
 
-        <!-- ── Header ──────────────────────────────────────────────────── -->
+        <!-- ── Header ──────────────────────────────────────────────── -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-                <h1 class="text-2xl font-bold text-[var(--text-main)]">Job Vacancies</h1>
-                <p class="text-sm text-[var(--text-muted)]">Manage job postings and vacancy announcements.</p>
+                <h1 class="text-2xl font-bold text-[var(--text-main)] tracking-tight">Job Vacancies</h1>
+                <p class="text-sm text-[var(--text-muted)] mt-0.5">Manage job postings and vacancy announcements.</p>
             </div>
             <div class="flex items-center gap-2">
                 <button @click="fetchJobs"
-                    class="p-2 rounded-lg border border-[var(--border-main)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors"
+                    class="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--border-main)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors"
                     title="Refresh">
                     <i :class="['pi pi-refresh text-sm', { 'animate-spin': loading }]"></i>
                 </button>
                 <button v-if="canManage" @click="openCreate"
-                    class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
+                    class="btn-primary h-9 px-4 text-sm flex items-center gap-2">
                     <i class="pi pi-plus text-xs"></i> Post Vacancy
                 </button>
             </div>
         </div>
 
-        <!-- ── Stats ───────────────────────────────────────────────────── -->
+        <!-- ── Stats Row ───────────────────────────────────────────── -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div v-for="(val, key) in stats" :key="key"
-                class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1">{{ key }}</p>
-                <p class="text-2xl font-bold text-[var(--text-main)]">{{ val }}</p>
+            <div v-for="([key, val], i) in [['Total', stats.total], ['Published', stats.published], ['Draft', stats.draft], ['Closed', stats.closed]]"
+                :key="key"
+                :class="[
+                    'bg-[var(--surface)] border rounded-xl px-4 py-3 flex items-center gap-3',
+                    i === 1 ? 'border-green-200' : i === 2 ? 'border-slate-200' : i === 3 ? 'border-red-200' : 'border-[var(--border-main)]'
+                ]">
+                <div :class="[
+                    'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                    i === 1 ? 'bg-green-50 text-green-600' : i === 2 ? 'bg-slate-100 text-slate-500' : i === 3 ? 'bg-red-50 text-red-600' : 'bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                ]">
+                    <i :class="['pi text-sm', i === 1 ? 'pi-send' : i === 2 ? 'pi-file-edit' : i === 3 ? 'pi-lock' : 'pi-briefcase']"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{{ key }}</p>
+                    <p class="text-xl font-bold text-[var(--text-main)] leading-tight tabular-nums">{{ val }}</p>
+                </div>
             </div>
         </div>
 
-        <!-- ── Toolbar ─────────────────────────────────────────────────── -->
-        <div
-            class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl p-4 flex flex-col sm:flex-row gap-3">
+        <!-- ── Toolbar ─────────────────────────────────────────────── -->
+        <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl p-4 flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-                <i
-                    class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none"></i>
-                <input v-model="searchQuery" type="text" placeholder="Search by title, code, or assignment..."
-                    class="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--text-main)]/10 focus:border-[var(--text-main)] transition-shadow" />
+                <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none"></i>
+                <input v-model="searchQuery" type="search" placeholder="Search by title, code, or assignment..."
+                    class="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-shadow" />
             </div>
             <div class="flex gap-2 flex-wrap">
                 <select v-model="filterStatus"
-                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer">
+                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)]">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -312,14 +317,14 @@ const sortIcon = (field) => {
                     <option value="archived">Archived</option>
                 </select>
                 <select v-model="filterTrack"
-                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer">
+                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)]">
                     <option value="">All Tracks</option>
                     <option value="teaching">Teaching</option>
                     <option value="teaching_related">Teaching-Related</option>
                     <option value="non_teaching">Non-Teaching</option>
                 </select>
                 <select v-model="filterType"
-                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer">
+                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)]">
                     <option value="">All Types</option>
                     <option value="permanent">Permanent</option>
                     <option value="contractual">Contractual</option>
@@ -327,162 +332,158 @@ const sortIcon = (field) => {
                     <option value="casual">Casual</option>
                 </select>
                 <select v-model="sortBy"
-                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer">
-                    <option value="createdAt">Sort: Date Created</option>
-                    <option value="positionTitle">Sort: Title</option>
-                    <option value="salaryGrade">Sort: Salary Grade</option>
-                    <option value="deadline">Sort: Deadline</option>
+                    class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)]">
+                    <option value="createdAt">Date Created</option>
+                    <option value="positionTitle">Title</option>
+                    <option value="salaryGrade">Salary Grade</option>
+                    <option value="deadline">Deadline</option>
                 </select>
                 <button @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
                     class="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                     <i :class="['pi text-sm', sortDir === 'asc' ? 'pi-sort-amount-up' : 'pi-sort-amount-down']"></i>
                 </button>
                 <button v-if="hasActiveFilters" @click="clearFilters"
-                    class="h-9 px-3 rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center gap-1.5">
+                    class="h-9 px-3 rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-500 hover:bg-red-100 transition-colors flex items-center gap-1.5">
                     <i class="pi pi-times text-[10px]"></i> Clear
                 </button>
             </div>
         </div>
 
-        <!-- ── Table ───────────────────────────────────────────────────── -->
-        <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl shadow-sm overflow-hidden">
+        <!-- ── Table ───────────────────────────────────────────────── -->
+        <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-xl overflow-hidden">
 
-            <div v-if="loading" class="p-8 flex flex-col gap-3">
-                <div v-for="i in 5" :key="i" class="h-16 rounded-lg bg-[var(--bg-app)] animate-pulse"></div>
+            <div v-if="loading" class="p-6 flex flex-col gap-3">
+                <div v-for="i in 5" :key="i"
+                    class="h-16 rounded-xl bg-[var(--bg-app)] animate-pulse"
+                    :style="{ animationDelay: `${i * 60}ms` }"></div>
             </div>
 
-            <div v-else-if="filteredJobs.length === 0"
-                class="py-20 flex flex-col items-center gap-3 text-[var(--text-muted)]">
-                <i class="pi pi-briefcase text-4xl text-slate-300"></i>
-                <p class="text-sm font-medium">No job vacancies found</p>
+            <div v-else-if="filteredJobs.length === 0" class="py-20 flex flex-col items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-[var(--bg-app)] border border-[var(--border-main)] flex items-center justify-center">
+                    <i class="pi pi-briefcase text-2xl text-[var(--text-muted)]"></i>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm font-semibold text-[var(--text-main)]">No job vacancies found</p>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                        {{ hasActiveFilters ? 'Try adjusting your filters' : 'Post your first vacancy to get started' }}
+                    </p>
+                </div>
                 <button v-if="hasActiveFilters" @click="clearFilters"
-                    class="text-xs text-[var(--color-primary)] hover:underline">Clear filters</button>
-                <button v-else-if="canManage" @click="openCreate" class="text-xs text-[var(--color-primary)] hover:underline">Post
-                    your first vacancy</button>
+                    class="text-xs font-semibold text-[var(--color-primary)] hover:underline">Clear filters</button>
+                <button v-else-if="canManage" @click="openCreate"
+                    class="btn-primary h-9 px-4 text-xs flex items-center gap-1.5">
+                    <i class="pi pi-plus text-[10px]"></i> Post Vacancy
+                </button>
             </div>
 
             <div v-else class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-[var(--border-main)] bg-[var(--bg-app)]">
-                            <th class="px-4 py-3 text-left">
+                            <th class="px-5 py-3 text-left">
                                 <button @click="toggleSort('positionTitle')"
-                                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-                                    Position <i :class="['pi text-[10px]', sortIcon('positionTitle')]"></i>
+                                    class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                                    Position <i :class="['pi text-[9px]', sortIcon('positionTitle')]"></i>
                                 </button>
                             </th>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                Track</th>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                Type</th>
-                            <th class="px-4 py-3 text-left">
+                            <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Track</th>
+                            <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Type</th>
+                            <th class="px-5 py-3 text-left">
                                 <button @click="toggleSort('salaryGrade')"
-                                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-                                    SG <i :class="['pi text-[10px]', sortIcon('salaryGrade')]"></i>
+                                    class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                                    Salary <i :class="['pi text-[9px]', sortIcon('salaryGrade')]"></i>
                                 </button>
                             </th>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                Vacancies</th>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                Status</th>
-                            <th class="px-4 py-3 text-left">
+                            <th class="px-5 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Slots</th>
+                            <th class="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
+                            <th class="px-5 py-3 text-left">
                                 <button @click="toggleSort('deadline')"
-                                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-                                    Deadline <i :class="['pi text-[10px]', sortIcon('deadline')]"></i>
+                                    class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                                    Deadline <i :class="['pi text-[9px]', sortIcon('deadline')]"></i>
                                 </button>
                             </th>
-                            <th
-                                class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                Actions</th>
+                            <th class="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--border-main)]">
                         <tr v-for="job in filteredJobs" :key="job._id"
                             class="hover:bg-[var(--bg-app)] transition-colors group">
+
                             <!-- Position -->
-                            <td class="px-4 py-3">
-                                <p class="font-semibold text-[var(--text-main)] leading-tight">{{ job.positionTitle }}
-                                </p>
+                            <td class="px-5 py-3.5">
+                                <p class="font-semibold text-[var(--text-main)] leading-tight">{{ job.positionTitle }}</p>
                                 <p class="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1.5">
                                     <i class="pi pi-tag text-[9px]"></i>{{ job.positionCode }}
-                                    <span class="text-[var(--border-main)]">·</span>
+                                    <span class="opacity-40">·</span>
                                     <i class="pi pi-map-marker text-[9px]"></i>{{ job.placeOfAssignment }}
                                 </p>
                             </td>
+
                             <!-- Track -->
-                            <td class="px-4 py-3">
-                                <span
-                                    :class="['text-[10px] font-semibold px-2 py-0.5 rounded-full border', trackConfig[job.hiringTrack]?.class || 'bg-gray-100 text-gray-600 border-gray-200']">
+                            <td class="px-5 py-3.5">
+                                <span :class="['text-[10px] font-semibold px-2.5 py-[3px] rounded-full border', trackConfig[job.hiringTrack]?.cls || 'bg-slate-100 text-slate-500 border-slate-200']">
                                     {{ trackConfig[job.hiringTrack]?.label || job.hiringTrack }}
                                 </span>
                             </td>
+
                             <!-- Type -->
-                            <td class="px-4 py-3 text-sm text-[var(--text-muted)] capitalize">{{ job.employmentType }}
+                            <td class="px-5 py-3.5 text-sm text-[var(--text-muted)] capitalize">{{ job.employmentType }}</td>
+
+                            <!-- Salary -->
+                            <td class="px-5 py-3.5">
+                                <p class="text-sm font-bold text-[var(--text-main)]">SG-{{ job.salaryGrade }}</p>
+                                <p class="text-xs text-[var(--text-muted)]">₱{{ Number(job.salary).toLocaleString() }}</p>
                             </td>
-                            <!-- SG -->
-                            <td class="px-4 py-3">
-                                <span class="text-sm font-semibold text-[var(--text-main)]">SG-{{ job.salaryGrade
-                                    }}</span>
-                                <p class="text-xs text-[var(--text-muted)]">₱{{ Number(job.salary).toLocaleString() }}
-                                </p>
-                            </td>
-                            <!-- Vacancies -->
-                            <td class="px-4 py-3 text-center">
-                                <span
-                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bg-app)] border border-[var(--border-main)] text-sm font-bold text-[var(--text-main)]">
+
+                            <!-- Slots -->
+                            <td class="px-5 py-3.5 text-center">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bg-app)] border border-[var(--border-main)] text-sm font-bold text-[var(--text-main)]">
                                     {{ job.noOfVacancy || job.itemNumbers?.length || 0 }}
                                 </span>
                             </td>
+
                             <!-- Status -->
-                            <td class="px-4 py-3">
-                                <span
-                                    :class="['text-[10px] font-semibold px-2.5 py-1 rounded-full border', statusConfig[job.status]?.class]">
+                            <td class="px-5 py-3.5">
+                                <span :class="['text-[10px] font-semibold px-2.5 py-[3px] rounded-full border', statusConfig[job.status]?.cls]">
                                     {{ statusConfig[job.status]?.label || job.status }}
                                 </span>
                             </td>
+
                             <!-- Deadline -->
-                            <td class="px-4 py-3">
+                            <td class="px-5 py-3.5">
                                 <span v-if="job.deadline"
-                                    :class="['text-sm', isExpired(job.deadline) ? 'text-red-500 font-medium' : 'text-[var(--text-muted)]']">
-                                    <i v-if="isExpired(job.deadline)" class="pi pi-exclamation-circle text-xs mr-1"></i>
+                                    :class="['text-xs font-medium', isExpired(job.deadline) ? 'text-red-500' : 'text-[var(--text-muted)]']">
+                                    <i v-if="isExpired(job.deadline)" class="pi pi-exclamation-circle text-[10px] mr-0.5"></i>
                                     {{ formatDate(job.deadline) }}
                                 </span>
-                                <span v-else class="text-[var(--text-muted)]">—</span>
+                                <span v-else class="text-[var(--text-faint)]">—</span>
                             </td>
+
                             <!-- Actions -->
-                            <td class="px-4 py-3" @click.stop>
-                                <div
-                                    class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <!-- Quick status buttons -->
+                            <td class="px-5 py-3.5" @click.stop>
+                                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button v-if="canManage && job.status === 'draft'"
                                         @click="setStatus(job, 'published')"
-                                        class="text-xs px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors font-medium"
-                                        title="Publish">
-                                        <i class="pi pi-send text-[10px]"></i> Publish
+                                        class="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors">
+                                        <i class="pi pi-send text-[9px] mr-0.5"></i>Publish
                                     </button>
                                     <button v-if="canManage && job.status === 'published'"
                                         @click="setStatus(job, 'closed')"
-                                        class="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors font-medium"
-                                        title="Close">
-                                        <i class="pi pi-lock text-[10px]"></i> Close
+                                        class="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors">
+                                        <i class="pi pi-lock text-[9px] mr-0.5"></i>Close
                                     </button>
                                     <button v-if="canManage && (job.status === 'closed' || job.status === 'draft')"
                                         @click="setStatus(job, 'archived')"
-                                        class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors font-medium"
-                                        title="Archive">
+                                        class="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors">
                                         Archive
                                     </button>
                                     <button v-if="canManage" @click="openEdit(job)"
-                                        class="p-1.5 rounded-lg border border-[var(--border-main)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors"
+                                        class="h-7 w-7 flex items-center justify-center rounded-lg border border-[var(--border-main)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors"
                                         title="Edit">
                                         <i class="pi pi-pencil text-xs"></i>
                                     </button>
                                     <button v-if="canManage" @click="handleDelete(job)"
-                                        class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                        class="h-7 w-7 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                                         title="Delete">
                                         <i class="pi pi-trash text-xs"></i>
                                     </button>
@@ -494,65 +495,54 @@ const sortIcon = (field) => {
             </div>
         </div>
 
-        <!-- ── Create / Edit Modal ────────────────────────────────────────────── -->
+        <!-- ── Create / Edit Modal ──────────────────────────────────── -->
         <Teleport to="body">
+        <Transition name="fade">
         <div v-if="showModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             @click.self="closeModal">
 
-            <div
-                class="bg-[var(--surface)] border border-[var(--border-main)] rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-zoom-in max-h-[92vh]">
+            <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-zoom-in max-h-[92vh]">
 
                 <!-- Header -->
-                <div
-                    class="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between flex-shrink-0">
+                <div class="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between flex-shrink-0">
                     <div>
-                        <h3 class="text-base font-bold text-[var(--text-main)]">
+                        <h3 class="text-sm font-bold text-[var(--text-main)]">
                             {{ isEditing ? 'Edit Job Vacancy' : 'Post New Vacancy' }}
                         </h3>
-                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Fill in all required qualification standards.
-                        </p>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Fill in all required qualification standards.</p>
                     </div>
                     <button @click="closeModal"
-                        class="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-                        <i class="pi pi-times text-lg"></i>
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors">
+                        <i class="pi pi-times text-sm"></i>
                     </button>
                 </div>
 
                 <!-- Scrollable Body -->
                 <div class="overflow-y-auto custom-scrollbar flex-1 p-6">
-                    <form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
+                    <form @submit.prevent="handleSubmit" class="flex flex-col gap-7">
 
-                        <!-- Section: Basic Info -->
+                        <!-- Section 1: Basic Info -->
                         <div>
-                            <h4
-                                class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold">1</span>
-                                Basic Information
-                            </h4>
+                            <div class="flex items-center gap-2.5 mb-4">
+                                <span class="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">1</span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Basic Information</h4>
+                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="sm:col-span-2 flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Position Title <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.positionTitle" type="text" placeholder="e.g. Teacher I"
-                                        required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Position Title <span class="text-red-500">*</span></label>
+                                    <input v-model="form.positionTitle" type="text" placeholder="e.g. Teacher I" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Position Code <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.positionCode" type="text" placeholder="e.g. TCHR1-001" required
-                                        class="field uppercase" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Position Code <span class="text-red-500">*</span></label>
+                                    <input v-model="form.positionCode" type="text" placeholder="e.g. TCHR1-001" required class="field uppercase" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Place of Assignment
-                                        <span class="text-red-500">*</span></label>
-                                    <input v-model="form.placeOfAssignment" type="text"
-                                        placeholder="e.g. GNC Elementary School" required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Place of Assignment <span class="text-red-500">*</span></label>
+                                    <input v-model="form.placeOfAssignment" type="text" placeholder="e.g. GNC Elementary School" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Hiring Track <span
-                                            class="text-red-500">*</span></label>
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Hiring Track <span class="text-red-500">*</span></label>
                                     <select v-model="form.hiringTrack" required class="field">
                                         <option value="teaching">Teaching</option>
                                         <option value="teaching_related">Teaching-Related</option>
@@ -560,8 +550,7 @@ const sortIcon = (field) => {
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Employment
-                                        Type</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Employment Type</label>
                                     <select v-model="form.employmentType" class="field">
                                         <option value="permanent">Permanent</option>
                                         <option value="contractual">Contractual</option>
@@ -570,8 +559,7 @@ const sortIcon = (field) => {
                                     </select>
                                 </div>
                                 <div class="sm:col-span-2 flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Description <span
-                                            class="text-red-500">*</span></label>
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Description <span class="text-red-500">*</span></label>
                                     <textarea v-model="form.description" rows="3"
                                         placeholder="Brief description of duties and responsibilities..." required
                                         class="field resize-none"></textarea>
@@ -579,29 +567,23 @@ const sortIcon = (field) => {
                             </div>
                         </div>
 
-                        <!-- Section: Salary & Status -->
+                        <!-- Section 2: Salary & Status -->
                         <div>
-                            <h4
-                                class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold">2</span>
-                                Salary & Status
-                            </h4>
+                            <div class="flex items-center gap-2.5 mb-4">
+                                <span class="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">2</span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Salary &amp; Status</h4>
+                            </div>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Salary Grade <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model.number="form.salaryGrade" type="number" min="1" max="33"
-                                        placeholder="e.g. 11" required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Salary Grade <span class="text-red-500">*</span></label>
+                                    <input v-model.number="form.salaryGrade" type="number" min="1" max="33" placeholder="e.g. 11" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Monthly Salary (₱)
-                                        <span class="text-red-500">*</span></label>
-                                    <input v-model.number="form.salary" type="number" min="1" placeholder="e.g. 25000"
-                                        required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Monthly Salary (₱) <span class="text-red-500">*</span></label>
+                                    <input v-model.number="form.salary" type="number" min="1" placeholder="e.g. 25000" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Status</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Status</label>
                                     <select v-model="form.status" class="field">
                                         <option value="draft">Draft</option>
                                         <option value="published">Published</option>
@@ -610,72 +592,61 @@ const sortIcon = (field) => {
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Application
-                                        Deadline</label>
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Application Deadline</label>
                                     <input v-model="form.deadline" type="date" class="field" />
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section: Qualification Standards -->
+                        <!-- Section 3: Qualification Standards -->
                         <div>
-                            <h4
-                                class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold">3</span>
-                                Qualification Standards (QS)
-                            </h4>
+                            <div class="flex items-center gap-2.5 mb-4">
+                                <span class="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">3</span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Qualification Standards (QS)</h4>
+                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Education <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.education" type="text"
-                                        placeholder="e.g. Bachelor's Degree in Education" required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Education <span class="text-red-500">*</span></label>
+                                    <input v-model="form.education" type="text" placeholder="e.g. Bachelor's Degree in Education" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Experience <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.experience" type="text" placeholder="e.g. None required"
-                                        required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Experience <span class="text-red-500">*</span></label>
+                                    <input v-model="form.experience" type="text" placeholder="e.g. None required" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Training <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.trainings" type="text" placeholder="e.g. None required"
-                                        required class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Training <span class="text-red-500">*</span></label>
+                                    <input v-model="form.trainings" type="text" placeholder="e.g. None required" required class="field" />
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-semibold text-[var(--text-muted)]">Eligibility <span
-                                            class="text-red-500">*</span></label>
-                                    <input v-model="form.eligibility" type="text" placeholder="e.g. LET / PBET" required
-                                        class="field" />
+                                    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Eligibility <span class="text-red-500">*</span></label>
+                                    <input v-model="form.eligibility" type="text" placeholder="e.g. LET / PBET" required class="field" />
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section: Item Numbers -->
+                        <!-- Section 4: Item Numbers -->
                         <div>
-                            <h4
-                                class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold">4</span>
-                                Plantilla Item Numbers
-                                <span class="text-[var(--text-muted)] font-normal normal-case tracking-normal">({{
-                                    form.itemNumbers.filter(n => n).length}} vacancy slot{{
-                                        form.itemNumbers.filter(n => n).length !== 1 ? 's' : ''}})</span>
-                            </h4>
+                            <div class="flex items-center gap-2.5 mb-4">
+                                <span class="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">4</span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+                                    Plantilla Item Numbers
+                                    <span class="ml-2 text-[var(--text-muted)] font-normal normal-case tracking-normal">
+                                        ({{ form.itemNumbers.filter(n => n).length }} slot{{ form.itemNumbers.filter(n => n).length !== 1 ? 's' : '' }})
+                                    </span>
+                                </h4>
+                            </div>
                             <div class="flex flex-col gap-2">
                                 <div v-for="(item, i) in form.itemNumbers" :key="i" class="flex gap-2">
                                     <input v-model="form.itemNumbers[i]" type="text"
                                         :placeholder="`Item No. ${i + 1}, e.g. TCHR1-GNC-001`" class="field flex-1" />
                                     <button type="button" @click="removeItemNumber(i)"
                                         :disabled="form.itemNumbers.length <= 1"
-                                        class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--border-main)] text-[var(--text-muted)] hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                                        class="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--border-main)] text-[var(--text-muted)] hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                                         <i class="pi pi-minus text-xs"></i>
                                     </button>
                                 </div>
                                 <button type="button" @click="addItemNumber"
-                                    class="mt-1 h-9 rounded-lg border border-dashed border-[var(--border-main)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-gray-400 transition-colors flex items-center justify-center gap-1.5">
+                                    class="h-9 rounded-lg border border-dashed border-[var(--border-main)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-slate-400 hover:bg-[var(--bg-app)] transition-colors flex items-center justify-center gap-1.5">
                                     <i class="pi pi-plus text-[10px]"></i> Add Item Number
                                 </button>
                             </div>
@@ -685,14 +656,13 @@ const sortIcon = (field) => {
                 </div>
 
                 <!-- Footer -->
-                <div
-                    class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--bg-app)] flex justify-end gap-3 flex-shrink-0">
+                <div class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--bg-app)] flex justify-end gap-3 flex-shrink-0">
                     <button @click="closeModal"
-                        class="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                        class="btn-secondary h-9 px-4 text-sm">
                         Cancel
                     </button>
                     <button @click="handleSubmit" :disabled="modalLoading"
-                        class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-6 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2">
+                        class="btn-primary h-9 px-6 text-sm flex items-center gap-2 disabled:opacity-50">
                         <i v-if="modalLoading" class="pi pi-spin pi-spinner text-sm"></i>
                         <i v-else :class="isEditing ? 'pi pi-save' : 'pi pi-send'" class="text-sm"></i>
                         {{ modalLoading ? 'Saving...' : (isEditing ? 'Save Changes' : 'Post Vacancy') }}
@@ -700,7 +670,7 @@ const sortIcon = (field) => {
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
     </div>
 </template>
-

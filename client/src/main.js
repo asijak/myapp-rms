@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 
 import Swal from 'sweetalert2'
 
@@ -65,3 +66,5 @@ app.directive('role', {
 })
 
 app.mount('#app')
+
+useSettingsStore().init()

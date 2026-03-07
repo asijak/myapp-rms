@@ -2,11 +2,13 @@
 import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter, RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import apiClient from '@/api/axios'
 
-const route     = useRoute()
-const router    = useRouter()
-const authStore = useAuthStore()
+const route         = useRoute()
+const router        = useRouter()
+const authStore     = useAuthStore()
+const settingsStore = useSettingsStore()
 
 // ── UI state ────────────────────────────────────────────────────
 const showMobileMenu  = ref(false)
@@ -22,27 +24,13 @@ const showConfirmPw   = ref(false)
 
 const pw = reactive({ current: '', new: '', confirm: '' })
 
-const navLinks = [
-    { label: 'Dashboard',       to: '/user/dashboard',    icon: 'pi-home'        },
-    { label: 'My Applications', to: '/user/applications', icon: 'pi-folder-open' },
-    { label: 'Job Vacancies',   to: '/vacancies',         icon: 'pi-briefcase'   },
-]
-
-const avatarSrc = computed(() =>
-    authStore.user?.avatarUrl
-    || `https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user?.username || 'U')}&background=1d4ed8&color=fff&bold=true`
-)
-
 // ── Avatar upload ────────────────────────────────────────────────
 const triggerFile = () => fileInput.value?.click()
 
 const onFileSelect = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    if (file.size > 10 * 1024 * 1024) {
-        alert('File too large. Max 10 MB.')
-        return
-    }
+    if (file.size > 10 * 1024 * 1024) { alert('File too large. Max 10 MB.'); return }
     const fd = new FormData()
     fd.append('avatar', file, file.name)
     uploading.value = true
@@ -50,9 +38,8 @@ const onFileSelect = async (e) => {
         const { data } = await apiClient.patch('/auth/update-avatar', fd)
         authStore.user = { ...data.user, avatarUrl: `${data.user.avatarUrl}?t=${Date.now()}` }
         showSettings.value = false
-    } catch {
-        alert('Upload failed.')
-    } finally {
+    } catch { alert('Upload failed.') }
+    finally {
         uploading.value = false
         if (fileInput.value) fileInput.value.value = ''
     }
@@ -72,6 +59,17 @@ const handlePwUpdate = async () => {
     } finally { isSaving.value = false }
 }
 
+const navLinks = [
+    { label: 'Dashboard',       to: '/user/dashboard',    icon: 'pi-home'        },
+    { label: 'My Applications', to: '/user/applications', icon: 'pi-folder-open' },
+    { label: 'Job Vacancies',   to: '/vacancies',         icon: 'pi-briefcase'   },
+]
+
+const avatarSrc = computed(() =>
+    authStore.user?.avatarUrl
+    || `https://ui-avatars.com/api/?name=${encodeURIComponent(authStore.user?.username || 'U')}&background=1d4ed8&color=fff&bold=true`
+)
+
 const closeMenu = () => { showMobileMenu.value = false }
 </script>
 
@@ -87,13 +85,18 @@ const closeMenu = () => { showMobileMenu.value = false }
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
 
                 <!-- Logo -->
-                <router-link to="/" class="flex items-center gap-3 shrink-0 group" aria-label="DepEd RSP Portal home">
-                    <div class="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-md shadow-blue-200 group-hover:shadow-blue-300 transition-shadow">
-                        <i class="pi pi-shield text-white text-base" aria-hidden="true"></i>
+                <router-link to="/" class="flex items-center gap-3 shrink-0 group" aria-label="RSP Portal home">
+                    <div class="w-9 h-9 rounded-xl overflow-hidden shadow-md group-hover:shadow-blue-300 transition-shadow"
+                        :class="settingsStore.resolvedLogoUrl ? '' : 'bg-[var(--color-primary)] flex items-center justify-center shadow-blue-200'">
+                        <img v-if="settingsStore.resolvedLogoUrl"
+                            :src="settingsStore.resolvedLogoUrl"
+                            alt="System Logo"
+                            class="w-full h-full object-cover" />
+                        <i v-else class="pi pi-shield text-white text-base" aria-hidden="true"></i>
                     </div>
                     <div class="hidden sm:flex flex-col leading-tight">
-                        <span class="text-sm font-bold text-[var(--text-main)] tracking-tight">DepEd GNC</span>
-                        <span class="text-[10px] font-medium text-[var(--text-muted)] tracking-wider uppercase">RSP Portal</span>
+                        <span class="text-sm font-bold text-[var(--text-main)] tracking-tight">{{ settingsStore.systemName }}</span>
+                        <span class="text-[10px] font-medium text-[var(--text-muted)] tracking-wider uppercase">{{ settingsStore.systemSubName }}</span>
                     </div>
                 </router-link>
 
@@ -205,7 +208,7 @@ const closeMenu = () => { showMobileMenu.value = false }
                         <i class="pi pi-shield text-white text-[9px]" aria-hidden="true"></i>
                     </div>
                     <p class="text-xs text-[var(--text-muted)]">
-                        &copy; {{ new Date().getFullYear() }} DepEd Division of Guihulngan City
+                        &copy; {{ new Date().getFullYear() }} {{ settingsStore.copyrightText }}
                     </p>
                 </div>
                 <div class="flex gap-5 text-xs text-[var(--text-muted)]">
@@ -215,7 +218,7 @@ const closeMenu = () => { showMobileMenu.value = false }
             </div>
         </footer>
 
-        <!-- ── Settings Modal ────────────────────────────────────── -->
+        <!-- ── Account Settings Modal ────────────────────────────── -->
         <Teleport to="body">
         <div v-if="showSettings"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
@@ -223,7 +226,6 @@ const closeMenu = () => { showMobileMenu.value = false }
             @click.self="showSettings = false">
 
             <div class="w-full max-w-md bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border-main)] overflow-hidden animate-zoom-in">
-                <!-- Header -->
                 <div class="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between">
                     <h2 id="user-settings-title" class="text-base font-bold text-[var(--text-main)]">Account Settings</h2>
                     <button @click="showSettings = false"
@@ -233,7 +235,6 @@ const closeMenu = () => { showMobileMenu.value = false }
                     </button>
                 </div>
 
-                <!-- Tabs -->
                 <div class="flex border-b border-[var(--border-main)]" role="tablist">
                     <button v-for="tab in [{id:'photo',icon:'pi-user',label:'Profile Photo'},{id:'password',icon:'pi-lock',label:'Password'}]"
                         :key="tab.id" @click="settingsTab = tab.id"
@@ -246,7 +247,6 @@ const closeMenu = () => { showMobileMenu.value = false }
                     </button>
                 </div>
 
-                <!-- Photo Tab -->
                 <div v-if="settingsTab === 'photo'" class="p-6 flex flex-col items-center gap-4" role="tabpanel">
                     <div class="relative group cursor-pointer" @click="triggerFile"
                         role="button" tabindex="0" @keydown.enter="triggerFile" @keydown.space.prevent="triggerFile"
@@ -258,15 +258,13 @@ const closeMenu = () => { showMobileMenu.value = false }
                         </div>
                     </div>
                     <input ref="fileInput" type="file" class="sr-only" accept="image/*" @change="onFileSelect" aria-label="Upload profile photo" />
-                    <button @click="triggerFile" :disabled="uploading"
-                        class="btn-primary h-9 px-5 text-sm disabled:opacity-50">
+                    <button @click="triggerFile" :disabled="uploading" class="btn-primary h-9 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
                         <i :class="['pi text-xs', uploading ? 'pi-spin pi-spinner' : 'pi-upload']" aria-hidden="true"></i>
                         {{ uploading ? 'Uploading...' : 'Upload Photo' }}
                     </button>
                     <p class="text-xs text-[var(--text-muted)]">JPG, PNG, GIF &bull; Max 10 MB</p>
                 </div>
 
-                <!-- Password Tab -->
                 <div v-if="settingsTab === 'password'" class="p-6 flex flex-col gap-4" role="tabpanel">
                     <div v-if="authStore.user?.googleId"
                         class="flex items-start gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700"
@@ -276,20 +274,18 @@ const closeMenu = () => { showMobileMenu.value = false }
                     </div>
                     <template v-else>
                         <div v-for="field in [
-                            { key:'current', show: showCurrPw,  setShow: (v) => showCurrPw = v,  label:'Current Password', ac:'current-password' },
-                            { key:'new',     show: showNewPw,   setShow: (v) => showNewPw = v,   label:'New Password',     ac:'new-password', hint:'Min. 8 characters' },
-                            { key:'confirm', show: showConfirmPw, setShow: (v) => showConfirmPw = v, label:'Confirm Password', ac:'new-password' },
+                            { key:'current', show: showCurrPw,    toggle: () => showCurrPw = !showCurrPw,       label:'Current Password', ac:'current-password' },
+                            { key:'new',     show: showNewPw,     toggle: () => showNewPw = !showNewPw,         label:'New Password',     ac:'new-password', hint:'Min. 8 characters' },
+                            { key:'confirm', show: showConfirmPw, toggle: () => showConfirmPw = !showConfirmPw, label:'Confirm Password',  ac:'new-password' },
                         ]" :key="field.key" class="flex flex-col gap-1.5">
-                            <label :for="`upw-${field.key}`" class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                                {{ field.label }}
-                            </label>
+                            <label :for="`upw-${field.key}`" class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{{ field.label }}</label>
                             <div class="relative">
                                 <input :id="`upw-${field.key}`" v-model="pw[field.key]"
                                     :type="field.show ? 'text' : 'password'"
                                     :placeholder="field.hint || '••••••••'"
                                     :autocomplete="field.ac"
                                     class="input pr-10" />
-                                <button type="button" @click="field.setShow(!field.show)"
+                                <button type="button" @click="field.toggle"
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                                     :aria-label="field.show ? `Hide ${field.label}` : `Show ${field.label}`">
                                     <i :class="['pi text-sm', field.show ? 'pi-eye-slash' : 'pi-eye']" aria-hidden="true"></i>
@@ -299,12 +295,11 @@ const closeMenu = () => { showMobileMenu.value = false }
                     </template>
                 </div>
 
-                <!-- Footer -->
                 <div class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--surface-2)] flex justify-end gap-3">
                     <button @click="showSettings = false" class="btn-secondary h-9 px-4 text-sm">Cancel</button>
                     <button v-if="settingsTab === 'password' && !authStore.user?.googleId"
                         @click="handlePwUpdate" :disabled="isSaving"
-                        class="btn-primary h-9 px-5 text-sm disabled:opacity-50">
+                        class="btn-primary h-9 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
                         <i v-if="isSaving" class="pi pi-spin pi-spinner text-xs" aria-hidden="true"></i>
                         {{ isSaving ? 'Saving...' : 'Save Changes' }}
                     </button>

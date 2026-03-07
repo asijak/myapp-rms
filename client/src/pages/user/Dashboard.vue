@@ -4,8 +4,35 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/axios'
 
-const router = useRouter()
+const router    = useRouter()
 const authStore = useAuthStore()
+
+// ── Profile summary ──────────────────────────────────────────────
+const profile        = ref(null)
+const loadingProfile = ref(false)
+
+const profileComplete = computed(() => {
+    const p = profile.value
+    if (!p) return 0
+    let filled = 0
+    if (p.name?.firstName && p.name?.lastName) filled++
+    if (p.contact?.phone || p.contact?.email) filled++
+    if (p.address?.barangay) filled++
+    if (p.education?.length) filled++
+    if (p.eligibility?.length) filled++
+    if (p.training?.length) filled++
+    if (p.experience?.length) filled++
+    return Math.round((filled / 7) * 100)
+})
+
+async function loadProfile() {
+    loadingProfile.value = true
+    try {
+        const { data } = await apiClient.get('/v1/profile/me')
+        profile.value = data.data || null
+    } catch { /* no profile yet */ }
+    finally { loadingProfile.value = false }
+}
 
 const applications = ref([])
 const loadingApps = ref(false)
@@ -22,8 +49,8 @@ async function loadApplications() {
     }
 }
 
-onMounted(loadApplications)
-onActivated(loadApplications)
+onMounted(() => { loadApplications(); loadProfile() })
+onActivated(() => { loadApplications(); loadProfile() })
 
 const totalApps = computed(() => applications.value.length)
 const pendingApps = computed(() => applications.value.filter(a => a.status === 'applied').length)
@@ -185,6 +212,104 @@ const memberSince = computed(() => {
                 </div>
                 <i class="pi pi-arrow-right text-[var(--text-muted)] ml-auto text-sm"></i>
             </router-link>
+        </div>
+
+        <!-- ── Application Profile ────────────────────────────────────── -->
+        <div class="bg-[var(--surface)] border border-[var(--border-main)] rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-[var(--border-main)] flex items-center justify-between">
+                <h2 class="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
+                    <i class="pi pi-id-card text-[var(--text-muted)] text-xs"></i> My Application Profile
+                </h2>
+                <router-link to="/user/profile"
+                    class="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                    <i class="pi pi-pencil text-[10px]"></i> Edit Profile
+                </router-link>
+            </div>
+
+            <!-- Loading -->
+            <div v-if="loadingProfile" class="p-6 flex flex-col gap-3">
+                <div class="h-4 w-48 rounded bg-[var(--bg-app)] animate-pulse"></div>
+                <div class="h-3 w-full rounded bg-[var(--bg-app)] animate-pulse"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                    <div v-for="i in 4" :key="i" class="h-16 rounded-lg bg-[var(--bg-app)] animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- No Profile Yet -->
+            <div v-else-if="!profile" class="p-8 flex flex-col items-center gap-4 text-center">
+                <div class="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <i class="pi pi-exclamation-triangle text-amber-500 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-[var(--text-main)]">Profile not set up yet</p>
+                    <p class="text-xs text-[var(--text-muted)] mt-1">Complete your application profile before applying to any vacancy.</p>
+                </div>
+                <router-link to="/user/profile" class="btn-primary h-9 px-5 text-sm flex items-center gap-2">
+                    <i class="pi pi-user-edit text-xs"></i> Complete My Profile
+                </router-link>
+            </div>
+
+            <!-- Profile Summary -->
+            <div v-else class="p-6 flex flex-col gap-5">
+                <!-- Name & contact -->
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-full bg-[var(--color-primary-light)] border border-blue-200 flex items-center justify-center flex-shrink-0">
+                        <i class="pi pi-user text-[var(--color-primary)]"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-[var(--text-main)] capitalize">
+                            {{ [profile.name?.firstName, profile.name?.middleName, profile.name?.lastName].filter(Boolean).join(' ') || 'Name not set' }}
+                        </p>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                            {{ profile.contact?.phone || profile.contact?.email || 'No contact info' }}
+                        </p>
+                        <p v-if="profile.address?.barangay" class="text-xs text-[var(--text-muted)]">
+                            {{ [profile.address.barangay, profile.address.municipality, profile.address.province].filter(Boolean).join(', ') }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Completeness bar -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-[var(--text-muted)]">Profile Completeness</span>
+                        <span :class="['text-xs font-bold', profileComplete >= 80 ? 'text-green-600' : profileComplete >= 50 ? 'text-amber-600' : 'text-red-500']">
+                            {{ profileComplete }}%
+                        </span>
+                    </div>
+                    <div class="h-2 rounded-full bg-[var(--bg-app)] overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500"
+                            :class="profileComplete >= 80 ? 'bg-green-500' : profileComplete >= 50 ? 'bg-amber-400' : 'bg-red-400'"
+                            :style="{ width: profileComplete + '%' }">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Counts grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div v-for="item in [
+                        { label: 'Education',    count: profile.education?.length   || 0, icon: 'pi-graduation-cap', color: 'bg-blue-50 border-blue-200 text-[var(--color-primary)]' },
+                        { label: 'Eligibility',  count: profile.eligibility?.length || 0, icon: 'pi-verified',       color: 'bg-purple-50 border-purple-200 text-purple-600' },
+                        { label: 'Trainings',    count: profile.training?.length    || 0, icon: 'pi-book',           color: 'bg-amber-50 border-amber-200 text-amber-600' },
+                        { label: 'Experience',   count: profile.experience?.length  || 0, icon: 'pi-briefcase',      color: 'bg-green-50 border-green-200 text-green-600' },
+                    ]" :key="item.label"
+                        class="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border bg-[var(--bg-app)]">
+                        <div :class="['w-8 h-8 rounded-lg border flex items-center justify-center', item.color]">
+                            <i :class="['pi text-sm', item.icon]"></i>
+                        </div>
+                        <p class="text-lg font-bold text-[var(--text-main)] leading-none">{{ item.count }}</p>
+                        <p class="text-[10px] font-medium text-[var(--text-muted)]">{{ item.label }}</p>
+                    </div>
+                </div>
+
+                <!-- Incomplete nudge -->
+                <div v-if="profileComplete < 100"
+                    class="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                    <i class="pi pi-info-circle flex-shrink-0"></i>
+                    <p class="text-xs">Your profile is incomplete. A complete profile improves your application.</p>
+                    <router-link to="/user/profile" class="ml-auto text-xs font-bold underline whitespace-nowrap">Update now</router-link>
+                </div>
+            </div>
         </div>
 
     </div>

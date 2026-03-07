@@ -13,6 +13,9 @@ import roleRouter from "./routes/role.routes.js";
 import userRouter from "./routes/user.routes.js";
 import jobRouter from "./routes/job.routes.js";
 import applicationRouter from "./routes/application.routes.js";
+import profileRouter from "./routes/profile.routes.js";
+import rubricRouter from "./routes/rubric.routes.js";
+import settingsRouter from "./routes/settings.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +63,9 @@ app.use("/api/v1/roles", roleRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/jobs", jobRouter);
 app.use("/api/v1/applications", applicationRouter);
+app.use("/api/v1/profile", profileRouter);
+app.use("/api/v1/rubrics", rubricRouter);
+app.use("/api/v1/settings", settingsRouter);
 
 app.all("*", (req, res, next) => {
   res.status(404).json({

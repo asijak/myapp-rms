@@ -1,4 +1,5 @@
 import Job from "../models/Job.js";
+import Application from "../models/Application.js";
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";
 
@@ -72,5 +73,9 @@ export const updateJob = catchAsync(async (req, res, next) => {
 export const deleteJob = catchAsync(async (req, res, next) => {
   const job = await Job.findByIdAndDelete(req.params.id);
   if (!job) return next(new AppError("Job not found", 404));
+
+  // Cascade: remove all applications submitted to this job
+  await Application.deleteMany({ submittedTo: job._id });
+
   res.status(204).send();
 });

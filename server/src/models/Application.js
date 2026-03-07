@@ -24,6 +24,15 @@ const applicationSchema = new mongoose.Schema(
     verifiedAt: Date,
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
+    // ── Verification Checklist (HR vs Physical Copies) ──
+    verificationChecklist: {
+      education:   { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      training:    { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      experience:  { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      eligibility: { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      performance: { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+    },
+
     /**
      * SECTION A: APPLICANT DATA (Snapshot from Profile)
      * These fields are filled from the Profile model but stored here.
@@ -40,6 +49,14 @@ const applicationSchema = new mongoose.Schema(
           units: Number,
           school: String,
           yearGraduated: Number,
+        },
+      ],
+      eligibility: [
+        {
+          name:        String,
+          placeOfExam: String,
+          dateOfExam:  Date,
+          rating:      String,
         },
       ],
       training: [
@@ -84,6 +101,20 @@ const applicationSchema = new mongoose.Schema(
       remarks: String,
     },
 
+    // ── Evaluation (HR Rating phase, post-verification) ──
+    isEvaluated: { type: Boolean, default: false },
+    evaluatedAt: Date,
+    evaluatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    // Per-item relevance flags set by the rater during evaluation
+    itemRelevance: {
+      education:   [{ index: Number, isRelevant: { type: Boolean, default: true }, note: { type: String, default: "" } }],
+      eligibility: [{ index: Number, isRelevant: { type: Boolean, default: true }, note: { type: String, default: "" } }],
+      training:    [{ index: Number, isRelevant: { type: Boolean, default: true }, note: { type: String, default: "" } }],
+      experience:  [{ index: Number, isRelevant: { type: Boolean, default: true }, note: { type: String, default: "" } }],
+      performance: { isRelevant: { type: Boolean, default: true }, note: { type: String, default: "" } },
+    },
+
     totalScore: { type: Number, default: 0 },
     status: {
       type: String,
@@ -111,34 +142,35 @@ const applicationSchema = new mongoose.Schema(
 );
 
 /**
- * 🔹 AUTO-INCREMENT CODE: APP-YYYY-0001 (Per Job)
+ * 🔹 AUTO-INCREMENT CODE: APP-POSITIONCODE-<jobId4>-0001
+ * jobId4 = last 4 hex chars of the job's _id, ensuring uniqueness
+ * even when the same positionCode is reused across different job postings.
  */
 applicationSchema.pre("save", async function () {
   if (this.isNew && !this.applicationCode) {
-    const year = new Date().getFullYear();
+    const jobSuffix = this.submittedTo.toString().slice(-4).toUpperCase();
+
     const count = await mongoose.model("Application").countDocuments({
       submittedTo: this.submittedTo,
-      createdAt: {
-        $gte: new Date(year, 0, 1),
-        $lte: new Date(year, 11, 31, 23, 59, 59),
-      },
     });
-    this.applicationCode = `APP-${year}-${String(count + 1).padStart(4, "0")}`;
+    this.applicationCode = `APP-${jobSuffix}-${String(count + 1).padStart(4, "0")}`;
   }
 
   // AUTO-CALCULATE TOTAL SCORE
   const r = this.hrRating;
-  this.totalScore =
-    r.educationPoints +
-    r.trainingPoints +
-    r.experiencePoints +
-    r.performancePoints +
-    r.outstandingAccomplishments +
-    r.appEducationPoints +
-    r.appLearningPoints +
-    (r.potentialPoints?.writtenTest || 0) +
-    (r.potentialPoints?.bei || 0) +
-    (r.potentialPoints?.workSample || 0);
+  if (r) {
+    this.totalScore =
+      (r.educationPoints || 0) +
+      (r.trainingPoints || 0) +
+      (r.experiencePoints || 0) +
+      (r.performancePoints || 0) +
+      (r.outstandingAccomplishments || 0) +
+      (r.appEducationPoints || 0) +
+      (r.appLearningPoints || 0) +
+      (r.potentialPoints?.writtenTest || 0) +
+      (r.potentialPoints?.bei || 0) +
+      (r.potentialPoints?.workSample || 0);
+  }
 });
 
 export default mongoose.model("Application", applicationSchema);
