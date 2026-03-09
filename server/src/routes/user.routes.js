@@ -1,7 +1,7 @@
 import express from "express";
 import * as userController from "../controllers/user.controller.js";
 import { protect, requirePermission } from "../middlewares/auth.middleware.js";
-import { validate } from "../validators/role.validator.js";
+import validate from "../middlewares/validate.middleware.js";
 import { userValidator } from "../validators/user.validator.js";
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.get("/", requirePermission("user_view"), userController.getAllUsers);
 router.patch(
   "/:id/status",
   requirePermission("user_manage"),
-  validate(userValidator.toggleStatus),
+  validate(userValidator.toggleStatusSchema),
   userController.toggleUserStatus,
 );
 

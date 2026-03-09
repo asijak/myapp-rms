@@ -131,6 +131,9 @@ export const notifyStatusUpdate = async ({ user, application, oldStatus, newStat
   }
 
   if (isFormal) {
+    // 💡 EMAIL DISABLED FOR STATUS UPDATES PER USER REQUEST
+    // Only in-app notification is created above.
+    /*
     await sendEmail({ 
       email: user.email, 
       subject: `[OFFICIAL] ${statusLabels[newStatus]} - ${jobTitle}`, 
@@ -138,8 +141,11 @@ export const notifyStatusUpdate = async ({ user, application, oldStatus, newStat
       notificationId: notification._id,
       isFormal: true
     });
+    */
   } else {
     // Standard informal update for other statuses
+    // 💡 EMAIL DISABLED FOR STATUS UPDATES PER USER REQUEST
+    /*
     const informalHtml = `
       <p>Dear ${user.name?.firstName || user.username},</p>
       <p>Your application for <strong>${jobTitle}</strong> is now <strong>${statusLabels[newStatus] || newStatus}</strong>.</p>
@@ -151,5 +157,6 @@ export const notifyStatusUpdate = async ({ user, application, oldStatus, newStat
       html: informalHtml, 
       notificationId: notification._id 
     });
+    */
   }
 };

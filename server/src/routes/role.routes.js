@@ -1,7 +1,8 @@
 import express from "express";
 import * as roleController from "../controllers/role.controller.js";
 import { protect, requirePermission } from "../middlewares/auth.middleware.js";
-import { validate, roleValidator } from "../validators/role.validator.js";
+import validate from "../middlewares/validate.middleware.js";
+import { roleValidator } from "../validators/role.validator.js";
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router
   .get(requirePermission("role_view"), roleController.getAllRoles)
   .post(
     requirePermission("role_manage"),
-    validate(roleValidator.createOrUpdate),
+    validate(roleValidator.createOrUpdateSchema),
     roleController.createRole,
   );
 
@@ -20,7 +21,7 @@ router
   .route("/:id")
   .patch(
     requirePermission("role_manage"),
-    validate(roleValidator.createOrUpdate),
+    validate(roleValidator.createOrUpdateSchema),
     roleController.updateRole,
   )
   .delete(requirePermission("role_manage"), roleController.deleteRole);

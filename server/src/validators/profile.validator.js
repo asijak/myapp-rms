@@ -1,9 +1,15 @@
 import Joi from "joi";
 
 const nameSchema = Joi.object({
-  firstName: Joi.string().required().trim(),
+  firstName: Joi.string().required().trim().messages({
+    'string.empty': 'First Name is required',
+    'any.required': 'First Name is required'
+  }),
   middleName: Joi.string().allow("", null).trim(),
-  lastName: Joi.string().required().trim(),
+  lastName: Joi.string().required().trim().messages({
+    'string.empty': 'Last Name is required',
+    'any.required': 'Last Name is required'
+  }),
   suffix: Joi.string().allow("", null).trim(),
 });
 
