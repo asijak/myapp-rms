@@ -200,9 +200,13 @@ export const updateApplicationStatus = catchAsync(async (req, res, next) => {
 // ── 8. Evaluate/Rate Application (Admin) ───────────────────────────────────
 export const evaluateApplication = catchAsync(async (req, res, next) => {
   const { hrRating, finalize } = req.body;
-  const application = await Application.findById(req.params.id);
+  const application = await Application.findById(req.params.id)
+    .populate("submittedBy")
+    .populate("submittedTo");
 
   if (!application) return next(new AppError("Application not found.", 404));
+
+  const oldStatus = application.status;
 
   if (hrRating) {
     application.hrRating = { ...application.hrRating, ...hrRating };
@@ -214,5 +218,16 @@ export const evaluateApplication = catchAsync(async (req, res, next) => {
   }
 
   await application.save();
+
+  if (finalize && application.status !== oldStatus) {
+    notifyStatusUpdate({
+      user: application.submittedBy,
+      application: application,
+      oldStatus: oldStatus,
+      newStatus: application.status,
+      jobTitle: application.submittedTo?.positionTitle || "Position"
+    });
+  }
+
   res.status(200).json({ status: "success", data: application });
 });

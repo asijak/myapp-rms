@@ -1,5 +1,5 @@
 import * as authService from "../services/auth.service.js";
-import sendEmail from "../services/email.service.js";
+import { sendEmail } from "../services/email.service.js";
 import User from "../models/User.js";
 import fs from "fs";
 import path from "path";

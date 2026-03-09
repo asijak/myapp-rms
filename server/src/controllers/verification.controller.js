@@ -60,19 +60,33 @@ export const verifyDocument = catchAsync(async (req, res, next) => {
   const rejectedCount = allDocs.filter(d => d.status === "rejected").length;
 
   if (pendingCount === 0) {
-    const application = await Application.findById(document.application._id).populate("submittedBy", "username email name");
+    const application = await Application.findById(document.application._id)
+      .populate("submittedBy", "username email name")
+      .populate("submittedTo", "positionTitle");
     
+    const oldStatus = application.status;
+
     if (rejectedCount > 0) {
-      // Potentially flag application as incomplete
       application.isQualified = false;
       application.disqualificationReason = "One or more documents failed verification.";
+      application.status = "disqualified";
     } else {
-      // Auto-advance if all are verified
       if (application.status === "verifying") {
         application.status = "comparative_assessment";
       }
     }
     await application.save();
+
+    if (application.status !== oldStatus) {
+      notifyStatusUpdate({
+        user: application.submittedBy,
+        application: application,
+        oldStatus: oldStatus,
+        newStatus: application.status,
+        jobTitle: application.submittedTo?.positionTitle || "Position",
+        reason: application.disqualificationReason
+      });
+    }
   }
 
   res.status(200).json({

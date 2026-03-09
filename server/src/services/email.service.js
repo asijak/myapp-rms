@@ -153,5 +153,3 @@ export const notifyStatusUpdate = async ({ user, application, oldStatus, newStat
     });
   }
 };
-
-export default { sendEmail, notifyStatusUpdate };
