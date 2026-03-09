@@ -6,29 +6,29 @@ export const seedRubrics = async () => {
 
   const seeds = [
     {
-      track: "non_teaching",
-      title: "DO 007, s. 2023 (Non-Teaching)",
+      category: "non_teaching",
+      title: "Non-Teaching Personnel Rubric",
       criteria: [
-        { key: "education", label: "Education", maxPoints: 20 },
-        { key: "training", label: "Training", maxPoints: 10 },
-        { key: "experience", label: "Experience", maxPoints: 15 },
-        { key: "performance", label: "Performance", maxPoints: 20 },
-        { key: "outstanding", label: "Outstanding Accomplishments", maxPoints: 5 },
-        { key: "application_education", label: "Application of Education", maxPoints: 10 },
-        { key: "application_learning", label: "Application of L&D", maxPoints: 10 },
-        { key: "potential", label: "Potential (BEI/Written)", maxPoints: 10 }
+        { key: "educationPoints", label: "Education", maxPoints: 5 },
+        { key: "trainingPoints", label: "Training", maxPoints: 5 },
+        { key: "experiencePoints", label: "Experience", maxPoints: 20 },
+        { key: "performancePoints", label: "Performance", maxPoints: 20 },
+        { key: "outstandingAccomplishments", label: "Outstanding Accomplishments", maxPoints: 5 },
+        { key: "appEducationPoints", label: "Application of Education", maxPoints: 10 },
+        { key: "appLearningPoints", label: "Application of L&D", maxPoints: 10 },
+        { key: "potentialPoints.bei", label: "Potential (BEI)", maxPoints: 25 }
       ]
     },
     {
-      track: "teaching",
-      title: "DO 007, s. 2023 (Teaching)",
+      category: "teaching",
+      title: "Teaching Personnel Rubric (Teacher I)",
       criteria: [
-        { key: "education", label: "Education", maxPoints: 20 },
-        { key: "training", label: "Training", maxPoints: 10 },
-        { key: "experience", label: "Experience", maxPoints: 15 },
-        { key: "let_rating", label: "PBET/LET Rating", maxPoints: 10 },
-        { key: "demo_teaching", label: "Classroom Observation (Demo)", maxPoints: 35 },
-        { key: "interview", label: "Interview", maxPoints: 10 }
+        { key: "educationPoints", label: "Education", maxPoints: 20 },
+        { key: "trainingPoints", label: "Training", maxPoints: 10 },
+        { key: "experiencePoints", label: "Experience", maxPoints: 10 },
+        { key: "potentialPoints.writtenTest", label: "LET/PBET Rating", maxPoints: 15 },
+        { key: "potentialPoints.workSample", label: "Classroom Observation (Demo)", maxPoints: 35 },
+        { key: "potentialPoints.bei", label: "Interview", maxPoints: 10 }
       ]
     }
   ];
