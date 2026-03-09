@@ -61,11 +61,12 @@ const profileSchema = new mongoose.Schema(
     // --- Eligibility ---
     eligibility: [
       {
-        name: { type: String, trim: true },
-        rating: { type: String, trim: true },
-        dateOfExam: Date,
-        placeOfExam: { type: String, trim: true },
-        licenseNumber: String,
+        type:           { type: String, trim: true }, // category (e.g. "Career Service (Professional)")
+        name:           { type: String, trim: true }, // specific exam title / license name
+        rating:         { type: String, trim: true },
+        dateOfExam:     Date,
+        placeOfExam:    { type: String, trim: true },
+        licenseNumber:  String,
         licenseValidity: Date,
       },
     ],

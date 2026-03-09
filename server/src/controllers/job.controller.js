@@ -68,13 +68,32 @@ export const updateJob = catchAsync(async (req, res, next) => {
     });
   }
 
-  const job = await Job.findByIdAndUpdate(req.params.id, updateData, {
+  const job = await Job.findByIdAndUpdate(req.params.id, { $set: updateData }, {
     new: true,
-    runValidators: true,
   });
 
   if (!job) return next(new AppError("Job not found", 404));
   res.status(200).json({ status: "success", data: job });
+});
+
+export const bulkUpdateStatus = catchAsync(async (req, res, next) => {
+  const { ids, status, deadline } = req.body;
+
+  if (!ids?.length || !status) {
+    return next(new AppError("ids and status are required", 400));
+  }
+
+  const validStatuses = ["draft", "published", "closed", "archived"];
+  if (!validStatuses.includes(status)) {
+    return next(new AppError("Invalid status", 400));
+  }
+
+  const update = { status };
+  if (deadline !== undefined) update.deadline = deadline || null;
+
+  await Job.updateMany({ _id: { $in: ids } }, { $set: update });
+
+  res.status(200).json({ status: "success", message: `${ids.length} jobs updated` });
 });
 
 export const deleteJob = catchAsync(async (req, res, next) => {

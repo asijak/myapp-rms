@@ -81,7 +81,7 @@ const applicationSchema = new mongoose.Schema(
     },
     attachments: [
       {
-        type: { type: String, enum: ["transcript", "diploma", "eligibility", "training", "experience", "pds_signed", "id_proof"] },
+        type: { type: String, enum: ["transcript", "diploma", "eligibility", "training", "experience", "pds_signed", "id_proof", "service_record", "training_cert"] },
         fileUrl: String,
         fileName: String,
         uploadedAt: { type: Date, default: Date.now }

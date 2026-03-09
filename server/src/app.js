@@ -26,6 +26,7 @@ import searchRouter from "./routes/search.routes.js";
 import pdsRouter from "./routes/pds.routes.js";
 import bulkRouter from "./routes/bulk.routes.js";
 import announcementRouter from "./routes/announcement.routes.js";
+import jobTemplateRouter from "./routes/jobTemplate.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,6 +87,7 @@ app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/pds", pdsRouter);
 app.use("/api/v1/bulk", bulkRouter);
 app.use("/api/v1/announcements", announcementRouter);
+app.use("/api/v1/job-templates", jobTemplateRouter);
 
 app.all("*", (req, res, next) => {
   res.status(404).json({

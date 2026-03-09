@@ -6,29 +6,28 @@ const jobSchema = new mongoose.Schema(
     positionCode: {
       type: String,
       required: true,
-      unique: true,
       uppercase: true,
     },
-    description: { type: String, required: true },
+    description: { type: String, default: "" },
 
     // 🔹 DepEd Qualification Standards (QS) - DO 007, s. 2023
     qualifications: {
-      education: { type: String, required: true },
-      experience: { type: String, required: true },
+      education: { type: String, default: "" },
+      experience: { type: String, default: "" },
       minExperienceMonths: { type: Number, default: 0 },
-      trainings: { type: String, required: true },
+      trainings: { type: String, default: "" },
       minTrainingHours: { type: Number, default: 0 },
-      eligibility: { type: String, required: true },
-      competencyRequirements: [{ type: String }],
+      eligibility: [String],
+      competencyRequirements: [String],
     },
 
     // Plantilla / Item details
-    itemNumbers: [{ type: String, required: true }],
+    itemNumbers: [String],
     salary: { type: Number, required: true },
     salaryGrade: { type: Number, required: true },
     noOfVacancy: { type: Number, default: 1 },
 
-    placeOfAssignment: { type: String, required: true },
+    placeOfAssignment: [String],
 
     // 🔹 Employment Type (What you currently have)
     employmentType: {
@@ -64,6 +63,7 @@ const jobSchema = new mongoose.Schema(
     },
 
     deadline: { type: Date },
+    hideVacancyCount: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

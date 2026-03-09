@@ -109,8 +109,7 @@ const memberSince = computed(() => {
                 </div>
 
                 <div class="flex gap-3">
-                    <router-link to="/user/vacancies"
-                        class="h-10 px-5 rounded-lg bg-[var(--text-main)] text-[var(--surface)] text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+                    <router-link to="/user/vacancies" class="btn-primary h-10 px-5 flex items-center gap-2 text-sm">
                         <i class="pi pi-briefcase text-xs"></i> Browse Jobs
                     </router-link>
                     <router-link to="/user/applications"
@@ -199,9 +198,7 @@ const memberSince = computed(() => {
                     <h2 class="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                         <i class="pi pi-bell text-[var(--color-primary)] text-xs"></i> Recent Notifications
                     </h2>
-                    <router-link to="/user/notifications" class="text-[10px] font-black uppercase tracking-widest text-[var(--text-faint)] hover:text-[var(--color-primary)] transition-colors">
-                        View all
-                    </router-link>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-faint)]">Notifications</span>
                 </div>
                 <div class="flex-1 overflow-y-auto max-h-[320px] custom-scrollbar">
                     <div v-if="notificationStore.loading && !notificationStore.notifications.length" class="p-8 text-center">
@@ -215,7 +212,7 @@ const memberSince = computed(() => {
                         <div v-for="n in notificationStore.notifications.slice(0, 5)" :key="n._id"
                             class="px-6 py-4 flex items-start gap-4 hover:bg-[var(--bg-app)] transition-colors group cursor-pointer"
                             @click="notificationStore.markAsRead(n._id)">
-                            <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border', n.status === 'unread' ? 'bg-[var(--color-primary-light)] border-[var(--border-main)] text-[var(--color-primary)]' : 'bg-[var(--surface-2)] border-[var(--border-subtle)] text-[var(--text-faint)]']">
+                            <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border', n.status === 'unread' ? 'bg-[var(--color-primary-light)] border-[var(--border-main)] text-[var(--color-primary)]' : 'bg-[var(--bg-app)] border-[var(--border-main)] text-[var(--text-faint)]']">
                                 <i :class="['pi text-[10px]', n.type === 'status_update' ? 'pi-info-circle' : 'pi-bell']"></i>
                             </div>
                             <div class="flex-1 min-w-0">
@@ -247,7 +244,7 @@ const memberSince = computed(() => {
                         <i :class="['pi text-xs', step.done ? 'pi-check-circle text-green-500' : 'pi-circle text-[var(--border-main)]']"></i>
                     </div>
                 </div>
-                <router-link to="/user/profile" class="mt-auto h-11 rounded-xl bg-[var(--text-main)] text-[var(--surface)] text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg">
+                <router-link to="/user/profile" class="btn-primary mt-auto h-11 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2">
                     <i class="pi pi-user-edit"></i> Complete Profile
                 </router-link>
             </div>
@@ -319,7 +316,7 @@ const memberSince = computed(() => {
             <div v-else class="p-6 flex flex-col gap-5">
                 <!-- Name & contact -->
                 <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-full bg-[var(--color-primary-light)] border border-[var(--border-main)] flex items-center justify-center flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-[var(--color-primary-light)] border border-[var(--color-primary)]/20 flex items-center justify-center flex-shrink-0">
                         <i class="pi pi-user text-[var(--color-primary)]"></i>
                     </div>
                     <div class="min-w-0">

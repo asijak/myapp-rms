@@ -214,10 +214,10 @@ const saveEdit = async () => {
             <div class="relative flex-1">
                 <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none"></i>
                 <input v-model="searchQuery" type="text" placeholder="Search by position title..."
-                    class="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--text-main)]/10 focus:border-[var(--text-main)] transition-shadow" />
+                    class="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-shadow" />
             </div>
             <select v-model="filterStatus"
-                class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none appearance-none cursor-pointer min-w-[140px]">
+                class="h-9 px-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] appearance-none cursor-pointer min-w-[140px] transition-shadow">
                 <option value="">All Statuses</option>
                 <option v-for="(cfg, key) in statusConfig" :key="key" :value="key">{{ cfg.label }}</option>
             </select>
@@ -306,7 +306,7 @@ const saveEdit = async () => {
                             <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-faint)]">
                                 {{ editMode ? 'Selection Mode' : `Code: ${selectedApp.applicationCode}` }}
                             </p>
-                            <span v-if="!editMode" class="w-1 h-1 rounded-full bg-[var(--border-strong)]"></span>
+                            <span v-if="!editMode" class="w-1 h-1 rounded-full bg-[var(--border-main)]"></span>
                             <div v-if="!editMode" class="flex gap-1">
                                 <button @click="activeTab = 'details'" :class="[activeTab === 'details' ? 'text-[var(--color-primary)]' : 'text-[var(--text-faint)]']" class="text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-main)] transition-colors">Details</button>
                                 <span class="text-[10px] text-[var(--text-faint)]">/</span>
@@ -329,8 +329,8 @@ const saveEdit = async () => {
                         <div class="mb-2">
                             <div class="flex items-center justify-between mb-4">
                                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-faint)]">Application Journey</p>
-                                <AppBadge :variant="statusConfig[selectedApp.status]?.class?.includes('green') ? 'success' : 'gold'" size="xs">
-                                    {{ statusConfig[selectedApp.status]?.label }}
+                                <AppBadge :variant="selectedApp.status" size="xs">
+                                    {{ statusConfig[selectedApp.status]?.label || selectedApp.status }}
                                 </AppBadge>
                             </div>
                             <div class="relative flex items-center justify-between">
@@ -396,7 +396,7 @@ const saveEdit = async () => {
                                     ['Track', trackLabel[selectedApp.job.hiringTrack] || selectedApp.job.hiringTrack],
                                     ['Salary Grade', `SG-${selectedApp.job.salaryGrade}`],
                                 ]" :key="label"
-                                    class="bg-[var(--surface-2)] rounded-xl p-3 border border-[var(--border-main)]">
+                                    class="bg-[var(--bg-app)] rounded-xl p-3 border border-[var(--border-main)]">
                                     <p class="text-[9px] font-black uppercase tracking-widest text-[var(--text-faint)] mb-0.5">{{ label }}</p>
                                     <p class="text-xs font-bold text-[var(--text-main)] truncate">{{ val }}</p>
                                 </div>
@@ -424,7 +424,7 @@ const saveEdit = async () => {
                                 ]" :key="docType.id" 
                                     class="p-4 bg-[var(--surface)] border border-[var(--border-main)] rounded-2xl flex items-center justify-between group hover:border-[var(--color-primary-ring)] transition-all">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-xl bg-[var(--surface-2)] flex items-center justify-center border border-[var(--border-main)] text-[var(--text-faint)]">
+                                        <div class="w-9 h-9 rounded-xl bg-[var(--bg-app)] flex items-center justify-center border border-[var(--border-main)] text-[var(--text-faint)]">
                                             <i :class="['pi text-xs', docType.icon]"></i>
                                         </div>
                                         <div>
@@ -461,7 +461,7 @@ const saveEdit = async () => {
                                 ['Eligibility',  selectedApp.applicantData.eligibility?.length || 0],
                                 ['Training',     selectedApp.applicantData.training?.length    || 0],
                                 ['Experience',   selectedApp.applicantData.experience?.length  || 0],
-                            ]" :key="label" class="flex justify-between items-center px-4 py-2 bg-[var(--surface-2)] border border-[var(--border-main)] rounded-lg">
+                            ]" :key="label" class="flex justify-between items-center px-4 py-2 bg-[var(--bg-app)] border border-[var(--border-main)] rounded-lg">
                                 <span class="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">{{ label }}</span>
                                 <span class="text-xs font-black text-[var(--text-main)]">{{ count }}</span>
                             </div>
@@ -470,7 +470,7 @@ const saveEdit = async () => {
                 </div>
 
                 <!-- Footer (view) -->
-                <div class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--surface-2)] flex items-center justify-between gap-3 flex-shrink-0 flex-wrap">
+                <div class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--bg-app)] flex items-center justify-between gap-3 flex-shrink-0 flex-wrap">
                     <button @click="closeModal"
                         class="h-10 px-5 rounded-lg border border-[var(--border-main)] text-sm font-semibold text-[var(--text-main)] hover:bg-[var(--surface)] transition-colors">
                         Close
@@ -621,7 +621,7 @@ const saveEdit = async () => {
                         Cancel
                     </button>
                     <button @click="saveEdit" :disabled="editSaving"
-                        class="h-10 px-5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] disabled:opacity-60 text-white text-sm font-semibold transition-colors flex items-center gap-2">
+                        class="btn-primary h-10 px-5 flex items-center gap-2 disabled:opacity-60">
                         <i :class="['pi text-xs', editSaving ? 'pi-spin pi-spinner' : 'pi-check']"></i>
                         {{ editSaving ? 'Saving...' : 'Save Changes' }}
                     </button>

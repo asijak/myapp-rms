@@ -99,7 +99,7 @@ const removeResponsibility = (exp, i) => exp.keyResponsibilities.splice(i, 1)
 const addItem = (list) => {
   if (list === 'children')     form.family.children.push({ firstName: '', middleName: '', lastName: '', suffix: '', birthDate: '' })
   if (list === 'education')    form.education.push({ level: '', school: '', degree: '', periodFrom: '', periodTo: '', notGraduated: false, unitsEarned: null, yearGraduated: null, honorsReceived: '' })
-  if (list === 'eligibility')  form.eligibility.push({ name: '', rating: '', dateOfExam: '', placeOfExam: '', licenseNumber: '', licenseValidity: '' })
+  if (list === 'eligibility')  form.eligibility.push({ type: '', name: '', rating: '', dateOfExam: '', placeOfExam: '', licenseNumber: '', licenseValidity: '' })
   if (list === 'experience')   form.experience.push({ periodFrom: '', periodTo: '', position: '', company: '', monthlySalary: null, salaryGrade: '', statusOfAppointment: 'Permanent', isGovernment: false, keyResponsibilities: [] })
   if (list === 'voluntary')    form.voluntaryWork.push({ organization: '', periodFrom: '', periodTo: '', hours: null, position: '' })
   if (list === 'training')     form.training.push({ title: '', periodFrom: '', periodTo: '', hours: 0, typeOfLD: 'Technical', provider: '' })
@@ -635,21 +635,49 @@ const SECTION = 'bg-[var(--surface)] border border-[var(--border-main)] rounded-
               <div class="w-8 h-8 rounded-xl bg-[var(--color-primary-light)] flex items-center justify-center">
                 <i class="pi pi-verified text-[var(--color-primary)] text-xs"></i>
               </div>
-              <span class="text-xs font-black text-[var(--text-main)] uppercase tracking-widest">{{ el.name || `Record #${i+1}` }}</span>
+              <div>
+                <span class="text-xs font-black text-[var(--text-main)] uppercase tracking-widest block leading-tight">{{ el.type || `Record #${i+1}` }}</span>
+                <span v-if="el.name" class="text-[10px] text-[var(--text-muted)]">{{ el.name }}</span>
+              </div>
             </div>
             <button @click="removeItem('eligibility', i)" class="text-red-400 hover:text-red-600 transition-colors">
               <i class="pi pi-trash"></i>
             </button>
           </div>
+          <!-- Type + Title row -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div class="flex flex-col gap-1.5">
-              <label :class="LABEL">Eligibility / Exam Title <span class="text-red-400">*</span></label>
-              <input v-model="el.name" :class="F" placeholder="e.g. Licensure Exam for Teachers (LET)" />
+              <label :class="LABEL">Eligibility Category <span class="text-red-400">*</span></label>
+              <select v-model="el.type" :class="F">
+                <option value="" disabled>Select category...</option>
+                <optgroup label="2nd Level — Professional">
+                  <option value="RA 1080 (Registered Teacher / LET)">RA 1080 — Registered Teacher (LET)</option>
+                  <option value="RA 1080 (Other Professional — Board Exam)">RA 1080 — Other Professional (Board Exam)</option>
+                  <option value="Career Service (Professional)">Career Service Professional — 2nd Level (CSE-PPT)</option>
+                  <option value="Bar (RA 1080)">RA 1080 — Bar Exam (Attorney)</option>
+                  <option value="2nd Level Eligibility (Other)">2nd Level Eligibility (Other)</option>
+                </optgroup>
+                <optgroup label="1st Level — Sub-Professional">
+                  <option value="Career Service (Sub-Professional)">Career Service Sub-Professional — 1st Level (CSE-PPT)</option>
+                  <option value="1st Level Eligibility (Other)">1st Level Eligibility (Other)</option>
+                </optgroup>
+                <optgroup label="Special / Misc">
+                  <option value="MC 11 s. 1996 (Barangay Official)">MC 11 s. 1996 — Barangay Official</option>
+                  <option value="R.A. 7883 (Barangay Health Worker)">R.A. 7883 — Barangay Health Worker</option>
+                </optgroup>
+              </select>
             </div>
+            <div class="flex flex-col gap-1.5">
+              <label :class="LABEL">Specific Exam / License Title <span class="text-red-400">*</span></label>
+              <input v-model="el.name" :class="F" placeholder="e.g. Licensure Examination for Teachers (LET)" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div class="flex flex-col gap-1.5">
               <label :class="LABEL">Rating / Score (%)</label>
               <input v-model="el.rating" :class="F" placeholder="e.g. 82.40" />
             </div>
+            <div></div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div class="flex flex-col gap-1.5">

@@ -47,11 +47,17 @@ export const applyToJob = catchAsync(async (req, res, next) => {
 // ── 2. Get My Applications (User) ──────────────────────────────────────────
 export const getMyApplications = catchAsync(async (req, res, next) => {
   const applications = await Application.find({ submittedBy: req.user._id })
-    .populate("submittedTo")
+    .populate("submittedTo", "positionTitle positionCode placeOfAssignment hiringTrack status deadline salary salaryGrade")
     .sort("-createdAt")
     .lean();
 
-  res.status(200).json({ status: "success", data: applications });
+  // Alias submittedTo → job for frontend compatibility
+  const data = applications.map(app => ({
+    ...app,
+    job: app.submittedTo,
+  }));
+
+  res.status(200).json({ status: "success", data });
 });
 
 // ── 3. Get All Applications for a Job (Admin) ──────────────────────────────

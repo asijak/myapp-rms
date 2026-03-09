@@ -326,7 +326,14 @@ const filterTabs = [
       <!-- Body -->
       <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[var(--border-main)]">
 
+        <!-- Skeleton loader -->
+        <div v-if="loading" class="p-4 flex flex-col gap-3">
+          <div v-for="i in 5" :key="i" class="h-14 rounded-xl bg-[var(--bg-app)] animate-pulse"
+            :style="{ animationDelay: `${i * 60}ms` }"></div>
+        </div>
+
         <!-- Rows -->
+        <template v-else>
         <div v-for="app in filtered" :key="app._id"
           class="grid grid-cols-12 px-6 py-3.5 items-center hover:bg-[var(--bg-app)] transition-colors cursor-default">
 
@@ -369,11 +376,21 @@ const filterTabs = [
         </div>
 
         <!-- Empty state -->
-        <div v-if="!loading && filtered.length === 0"
+        <div v-if="filtered.length === 0"
           class="flex flex-col items-center justify-center py-16 gap-3 text-[var(--text-muted)]">
           <i class="pi pi-inbox text-3xl text-[var(--text-faint)]"></i>
           <p class="text-sm font-bold text-[var(--text-sub)] uppercase tracking-widest">No applicants found</p>
         </div>
+        </template>
+      </div>
+
+      <!-- Table footer: export -->
+      <div class="px-6 py-3 border-t border-[var(--border-main)] bg-[var(--surface)] flex items-center justify-between flex-shrink-0">
+        <span class="text-xs text-[var(--text-muted)]">{{ filtered.length }} applicant{{ filtered.length !== 1 ? 's' : '' }}</span>
+        <button @click="showReport = true"
+          class="h-8 px-3 rounded-lg border border-[var(--border-main)] bg-[var(--bg-app)] hover:bg-[var(--surface)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors flex items-center gap-1.5">
+          <i class="pi pi-download text-[10px]"></i> Export
+        </button>
       </div>
     </div>
 
@@ -391,6 +408,15 @@ const filterTabs = [
         <i class="pi pi-search mr-2"></i> Find Vacancy
       </AppButton>
     </div>
+
+    <!-- ── Export Report ────────────────────────────────────────────────────── -->
+    <AppTableReport
+      v-model="showReport"
+      title="Applicant Verification Report"
+      :subtitle="selectedJob ? selectedJob.positionTitle : 'All Applicants'"
+      :columns="reportCols"
+      :rows="filtered"
+      filename="Applicants" />
 
     <!-- ── JOB PICKER MODAL ─────────────────────────────────────────────────── -->
     <AppModal v-model="showJobPicker" title="Select Recruitment Vacancy" icon="pi-search" width="max-w-2xl">
@@ -489,26 +515,157 @@ const filterTabs = [
                 :class="['overflow-y-auto custom-scrollbar p-10 transition-all duration-500', showPreview ? 'w-1/2' : 'w-full']">
                 <!-- Content... (Personal info grid etc) -->
                 <div class="space-y-10 max-w-3xl mx-auto">
+
+                  <!-- ── Personal ── -->
                   <section v-if="activePdsTab === 'personal'">
                     <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
                       <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
-                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Personal
-                        Information</h3>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Personal Information</h3>
                     </div>
                     <div class="grid grid-cols-2 gap-x-12 gap-y-8">
-                      <div
-                        v-for="[l, v] in [['First Name', selected.applicantData.personalInfo.firstName], ['Last Name', selected.applicantData.personalInfo.lastName], ['Birth Date', formatDate(selected.applicantData.personalInfo.birthDate)]]"
-                        :key="l">
-                        <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">
-                          {{ l
-                          }}</p>
+                      <div v-for="[l, v] in [
+                        ['First Name',   selected.applicantData?.personalInfo?.firstName],
+                        ['Middle Name',  selected.applicantData?.personalInfo?.middleName],
+                        ['Last Name',    selected.applicantData?.personalInfo?.lastName],
+                        ['Suffix',       selected.applicantData?.personalInfo?.suffix],
+                        ['Birth Date',   formatDate(selected.applicantData?.personalInfo?.birthDate)],
+                        ['Sex',          selected.applicantData?.personalInfo?.sex],
+                        ['Civil Status', selected.applicantData?.personalInfo?.civilStatus],
+                        ['Contact',      selected.applicantData?.personalInfo?.contact?.phone || selected.applicantData?.personalInfo?.contact?.phones?.[0]],
+                        ['Email',        selected.applicantData?.personalInfo?.contact?.email || selected.applicantData?.personalInfo?.contact?.emails?.[0]],
+                        ['Address',      [selected.applicantData?.personalInfo?.address?.barangay, selected.applicantData?.personalInfo?.address?.municipality, selected.applicantData?.personalInfo?.address?.province].filter(Boolean).join(', ')],
+                      ]" :key="l">
+                        <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
                         <p class="text-sm font-black text-[var(--text-main)] mt-1.5 uppercase">{{ v || '—' }}</p>
                       </div>
                     </div>
                   </section>
-                  <section v-else
-                    class="py-24 text-center text-[var(--text-faint)] italic uppercase tracking-widest text-[10px]">
-                    Accessing specialized records...</section>
+
+                  <!-- ── Education ── -->
+                  <section v-else-if="activePdsTab === 'education'">
+                    <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
+                      <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Educational Background</h3>
+                    </div>
+                    <div v-if="!selected.applicantData?.education?.length" class="py-16 text-center text-[var(--text-faint)] text-xs italic">No education records submitted.</div>
+                    <div v-else class="space-y-6">
+                      <div v-for="(edu, i) in selected.applicantData.education" :key="i"
+                        class="p-5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-app)]">
+                        <div class="grid grid-cols-2 gap-x-10 gap-y-5">
+                          <div v-for="[l, v] in [
+                            ['Degree / Level', edu.degree || edu.level],
+                            ['School', edu.school],
+                            ['Year Graduated', edu.notGraduated ? 'Did not graduate' : (edu.yearGraduated || '—')],
+                            ['Field of Study', edu.course],
+                          ]" :key="l">
+                            <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
+                            <p class="text-xs font-bold text-[var(--text-main)] mt-1 uppercase">{{ v || '—' }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Eligibility ── -->
+                  <section v-else-if="activePdsTab === 'eligibility'">
+                    <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
+                      <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Civil Service Eligibility</h3>
+                    </div>
+                    <div v-if="!selected.applicantData?.eligibility?.length" class="py-16 text-center text-[var(--text-faint)] text-xs italic">No eligibility records submitted.</div>
+                    <div v-else class="space-y-4">
+                      <div v-for="(elig, i) in selected.applicantData.eligibility" :key="i"
+                        class="p-5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-app)]">
+                        <div class="grid grid-cols-2 gap-x-10 gap-y-5">
+                          <div v-for="[l, v] in [
+                            ['Eligibility', elig.name],
+                            ['Rating', elig.rating],
+                            ['Date of Exam', formatDate(elig.dateOfExam)],
+                            ['Place of Exam', elig.placeOfExam],
+                            ['License Number', elig.licenseNumber],
+                            ['License Validity', formatDate(elig.licenseValidity)],
+                          ]" :key="l">
+                            <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
+                            <p class="text-xs font-bold text-[var(--text-main)] mt-1 uppercase">{{ v || '—' }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Experience ── -->
+                  <section v-else-if="activePdsTab === 'experience'">
+                    <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
+                      <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Work Experience</h3>
+                    </div>
+                    <div v-if="!selected.applicantData?.experience?.length" class="py-16 text-center text-[var(--text-faint)] text-xs italic">No experience records submitted.</div>
+                    <div v-else class="space-y-4">
+                      <div v-for="(exp, i) in selected.applicantData.experience" :key="i"
+                        class="p-5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-app)]">
+                        <div class="grid grid-cols-2 gap-x-10 gap-y-5">
+                          <div v-for="[l, v] in [
+                            ['Position / Designation', exp.position],
+                            ['Agency / Employer', exp.company],
+                            ['Date From', formatDate(exp.periodFrom)],
+                            ['Date To', exp.isPresent ? 'Present' : formatDate(exp.periodTo)],
+                            ['Monthly Salary', exp.monthlySalary ? `₱${Number(exp.monthlySalary).toLocaleString()}` : '—'],
+                            ['Government Service', exp.isGovernment ? 'Yes' : 'No'],
+                          ]" :key="l">
+                            <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
+                            <p class="text-xs font-bold text-[var(--text-main)] mt-1 uppercase">{{ v || '—' }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Training ── -->
+                  <section v-else-if="activePdsTab === 'training'">
+                    <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
+                      <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Training &amp; Seminars</h3>
+                    </div>
+                    <div v-if="!selected.applicantData?.training?.length" class="py-16 text-center text-[var(--text-faint)] text-xs italic">No training records submitted.</div>
+                    <div v-else class="space-y-4">
+                      <div v-for="(trn, i) in selected.applicantData.training" :key="i"
+                        class="p-5 rounded-xl border border-[var(--border-main)] bg-[var(--bg-app)]">
+                        <div class="grid grid-cols-2 gap-x-10 gap-y-5">
+                          <div v-for="[l, v] in [
+                            ['Title of Training', trn.title],
+                            ['Conducted By', trn.provider || trn.conductedBy],
+                            ['Date From', formatDate(trn.periodFrom)],
+                            ['Date To', formatDate(trn.periodTo)],
+                            ['Hours', trn.hours ? `${trn.hours} hrs` : '—'],
+                            ['Type of LD', trn.typeOfLD],
+                          ]" :key="l">
+                            <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
+                            <p class="text-xs font-bold text-[var(--text-main)] mt-1 uppercase">{{ v || '—' }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- ── Performance ── -->
+                  <section v-else-if="activePdsTab === 'performance'">
+                    <div class="flex items-center gap-3 mb-8 border-b border-[var(--border-main)] pb-4">
+                      <div class="w-1.5 h-6 bg-[var(--color-primary)] rounded-full"></div>
+                      <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.2em]">Performance Rating</h3>
+                    </div>
+                    <div v-if="!selected.applicantData?.performanceRating?.score" class="py-16 text-center text-[var(--text-faint)] text-xs italic">No performance rating submitted.</div>
+                    <div v-else class="grid grid-cols-2 gap-x-12 gap-y-8">
+                      <div v-for="[l, v] in [
+                        ['Numerical Score', selected.applicantData.performanceRating.score],
+                        ['Adjectival Rating', selected.applicantData.performanceRating.adjective],
+                        ['Period Covered', selected.applicantData.performanceRating.periodCovered],
+                      ]" :key="l">
+                        <p class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{{ l }}</p>
+                        <p class="text-sm font-black text-[var(--text-main)] mt-1.5 uppercase">{{ v || '—' }}</p>
+                      </div>
+                    </div>
+                  </section>
+
                 </div>
               </div>
               <div v-if="showPreview" class="w-1/2 border-l-4 border-[var(--border-main)] bg-[#2c2c2c] flex flex-col">
@@ -526,15 +683,31 @@ const filterTabs = [
           <!-- Sidebar Audit -->
           <aside
             class="w-96 flex flex-col bg-[var(--surface)] border-l border-[var(--border-main)] overflow-y-auto custom-scrollbar shadow-2xl">
+
+            <!-- Already Verified banner -->
+            <div v-if="selected.isVerified"
+              class="mx-4 mt-4 flex items-start gap-3 px-4 py-3 rounded-xl border text-xs font-semibold"
+              :class="selected.isQualified
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-red-800'">
+              <i :class="['pi mt-0.5 shrink-0', selected.isQualified ? 'pi-check-circle text-emerald-600' : 'pi-times-circle text-red-500']"></i>
+              <div>
+                <p class="font-black">{{ selected.isQualified ? 'Certified Qualified' : 'Disqualified' }}</p>
+                <p class="text-[10px] font-medium mt-0.5 opacity-80">
+                  {{ selected.isQualified ? 'This applicant has been verified and is qualified.' : (selected.disqualificationReason || 'Disqualified by HR.') }}
+                </p>
+                <p class="text-[9px] mt-1 opacity-60 uppercase tracking-wider">You may update the determination below.</p>
+              </div>
+            </div>
+
             <div class="p-8 border-b border-[var(--border-main)] bg-[var(--bg-app)]/30">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.15em]">Verification
-                  Audit
-                </h3>
+                <h3 class="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.15em]">Verification Audit</h3>
                 <span class="text-xs font-black tabular-nums">{{ checksCompleted }} / 5</span>
               </div>
               <div class="h-2.5 bg-[var(--border-main)] rounded-full overflow-hidden shadow-inner">
-                <div class="h-full rounded-full transition-all duration-700 bg-[var(--color-primary)]"
+                <div class="h-full rounded-full transition-all duration-700"
+                  :class="checksCompleted === 5 ? 'bg-emerald-500' : 'bg-[var(--color-primary)]'"
                   :style="{ width: `${(checksCompleted / 5) * 100}%` }"></div>
               </div>
             </div>

@@ -41,19 +41,29 @@ const userMetrics = computed(() => {
     const end   = curr.periodTo ? new Date(curr.periodTo) : new Date()
     return acc + Math.max(0, (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()))
   }, 0)
-  const trainHours    = (p.training    || []).reduce((acc, c) => acc + (Number(c.hours) || 0), 0)
-  const eligibilities = (p.eligibility || []).map(e => e.name?.toLowerCase() || '')
-  return { expMonths, trainHours, eligibilities }
+  const trainHours = (p.training || []).reduce((acc, c) => acc + (Number(c.hours) || 0), 0)
+  // Collect eligibility types for matching (use type field; fall back to name for legacy records)
+  const eligibilityTypes = (p.eligibility || []).map(e => e.type || e.name || '').filter(Boolean)
+  const eligibilityNames = (p.eligibility || []).map(e => e.name || '').filter(Boolean)
+  return { expMonths, trainHours, eligibilityTypes, eligibilityNames }
 })
 
 const getMatchStatus = (job) => {
   if (!userMetrics.value) return null
   const m = userMetrics.value
   const q = job.qualifications || {}
+
+  // eligibility is now an array; empty array or ['None Required'] = no requirement
+  const eligReq = Array.isArray(q.eligibility) ? q.eligibility : (q.eligibility ? [q.eligibility] : [])
+  const noneRequired = eligReq.length === 0 || eligReq.includes('None Required')
+  const eligMet = noneRequired || m.eligibilityTypes.some(t => eligReq.includes(t))
+  const eligReqLabel = noneRequired ? 'None Required' : eligReq.join(' / ')
+  const eligActLabel = m.eligibilityTypes.length > 0 ? m.eligibilityTypes.join(', ') : 'None on file'
+
   const criteria = [
     { label: 'Experience',  met: m.expMonths  >= (q.minExperienceMonths || 0), req: `${q.minExperienceMonths || 0} mo`,  act: `${m.expMonths} mo`   },
     { label: 'Training',    met: m.trainHours >= (q.minTrainingHours    || 0), req: `${q.minTrainingHours    || 0} hrs`, act: `${m.trainHours} hrs` },
-    { label: 'Eligibility', met: !q.eligibility || m.eligibilities.some(e => e.includes(q.eligibility.toLowerCase()) || q.eligibility.toLowerCase().includes(e)), req: q.eligibility || 'None', act: m.eligibilities.length > 0 ? 'On File' : 'None' },
+    { label: 'Eligibility', met: eligMet, req: eligReqLabel, act: eligActLabel },
   ]
   return { isQualified: criteria.every(c => c.met), criteria }
 }
@@ -177,7 +187,7 @@ const filteredJobs = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (q) list = list.filter(j =>
     j.positionTitle?.toLowerCase().includes(q) ||
-    j.placeOfAssignment?.toLowerCase().includes(q)
+    (Array.isArray(j.placeOfAssignment) ? j.placeOfAssignment.join(' ') : j.placeOfAssignment ?? '').toLowerCase().includes(q)
   )
   return list
 })
@@ -214,7 +224,8 @@ const qualificationRows = (job) => {
     label: 'Training',
     value: q.trainings + (q.minTrainingHours > 0 ? ` — minimum ${q.minTrainingHours} hour${q.minTrainingHours > 1 ? 's' : ''}` : ''),
   })
-  if (q.eligibility) rows.push({ label: 'Eligibility', value: q.eligibility })
+  const eligArr = Array.isArray(q.eligibility) ? q.eligibility : (q.eligibility ? [q.eligibility] : [])
+  if (eligArr.length) rows.push({ label: 'Eligibility', value: eligArr.join(' / ') })
   return rows
 }
 
@@ -359,7 +370,7 @@ const deadlineClass = (d) => {
             <h2 class="text-sm font-black text-[var(--text-main)] leading-tight mb-1 group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">{{ job.positionTitle }}</h2>
             <p class="text-xs text-[var(--text-faint)] font-medium flex items-center gap-1">
               <i class="pi pi-map-marker text-[10px]"></i>
-              {{ job.placeOfAssignment || 'TBA' }}
+              {{ (Array.isArray(job.placeOfAssignment) ? job.placeOfAssignment.join(', ') : job.placeOfAssignment) || 'TBA' }}
             </p>
           </div>
 
@@ -371,7 +382,8 @@ const deadlineClass = (d) => {
             </div>
             <div class="flex flex-col">
               <span class="text-[9px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Slots</span>
-              <span class="text-xs font-black text-[var(--text-sub)] tabular-nums">{{ job.noOfVacancy || 0 }}</span>
+              <span v-if="!job.hideVacancyCount" class="text-xs font-black text-[var(--text-sub)] tabular-nums">{{ job.noOfVacancy || 0 }}</span>
+              <span v-else class="text-xs font-black text-[var(--text-faint)]">—</span>
             </div>
             <div class="flex flex-col text-right">
               <span class="text-[9px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Deadline</span>
@@ -425,7 +437,7 @@ const deadlineClass = (d) => {
               </span>
               <h2 class="text-xl font-black text-[var(--text-main)] tracking-tight leading-tight mt-1">{{ selectedJob.positionTitle }}</h2>
               <p class="text-xs text-[var(--text-faint)] font-medium mt-1">
-                {{ selectedJob.positionCode ? selectedJob.positionCode + ' &middot; ' : '' }}{{ selectedJob.placeOfAssignment }}
+                {{ selectedJob.positionCode ? selectedJob.positionCode + ' · ' : '' }}{{ Array.isArray(selectedJob.placeOfAssignment) ? selectedJob.placeOfAssignment.join(', ') : selectedJob.placeOfAssignment }}
               </p>
             </div>
             <button @click="closeModal" class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--bg-app)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
@@ -446,7 +458,8 @@ const deadlineClass = (d) => {
               </div>
               <div class="bg-[var(--bg-app)] border border-[var(--border-main)] rounded-xl p-3 text-center">
                 <p class="text-[9px] font-black text-[var(--text-faint)] uppercase tracking-widest mb-1">Vacancies</p>
-                <p class="text-sm font-black text-emerald-600">{{ selectedJob.noOfVacancy || selectedJob.itemNumbers?.length || 1 }} slot{{ (selectedJob.noOfVacancy || 1) !== 1 ? 's' : '' }}</p>
+                <p v-if="!selectedJob.hideVacancyCount" class="text-sm font-black text-emerald-600">{{ selectedJob.noOfVacancy || selectedJob.itemNumbers?.length || 1 }} slot{{ (selectedJob.noOfVacancy || 1) !== 1 ? 's' : '' }}</p>
+                <p v-else class="text-sm font-black text-[var(--text-faint)]">—</p>
               </div>
               <div class="bg-[var(--bg-app)] border border-[var(--border-main)] rounded-xl p-3 text-center">
                 <p class="text-[9px] font-black text-[var(--text-faint)] uppercase tracking-widest mb-1">Employment</p>
