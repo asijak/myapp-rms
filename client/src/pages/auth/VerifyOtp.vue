@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 
 const email = route.query.email || 'your email';
 const loading = ref(false);
@@ -83,15 +85,16 @@ const verify = async () => {
             <div class="p-8 sm:p-10">
                 <div class="mb-8 text-center">
                     <div
-                        class="mx-auto mb-5 w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-md">
-                        <i class="pi pi-shield text-white text-lg"></i>
+                        class="mx-auto mb-5 w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md"
+                        :class="settingsStore.resolvedLogoUrl ? '' : 'bg-[var(--color-primary)]'">
+                        <img v-if="settingsStore.resolvedLogoUrl" :src="settingsStore.resolvedLogoUrl" class="w-full h-full object-cover" />
+                        <i v-else class="pi pi-shield text-white text-lg"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight">
-                        Verify your identity
+                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight uppercase tracking-widest">
+                        Verification
                     </h2>
-                    <p class="text-sm text-[var(--text-muted)] mt-1.5 leading-relaxed">
-                        We've sent a 6-digit code to <br />
-                        <span class="font-semibold text-[var(--text-main)]">{{ email }}</span>
+                    <p class="text-[10px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-[0.2em]">
+                        {{ settingsStore.systemName }} &bull; {{ settingsStore.systemSubName }}
                     </p>
                 </div>
 

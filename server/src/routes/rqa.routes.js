@@ -5,10 +5,9 @@ import { protect, requirePermission } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 router.use(protect);
-router.use(requirePermission("application_manage")); // Only admins can generate ranking
 
-router.get("/:jobId", rqaController.getRQA);
-router.get("/:jobId/export", rqaController.exportRQA);
-router.post("/:jobId/generate", rqaController.generateRanking);
+router.get("/:jobId", requirePermission("rqa_view"), rqaController.getRQA);
+router.get("/:jobId/export", requirePermission("rqa_export"), rqaController.exportRQA);
+router.post("/:jobId/generate", requirePermission("rqa_generate"), rqaController.generateRanking);
 
 export default router;

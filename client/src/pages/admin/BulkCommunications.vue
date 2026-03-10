@@ -133,7 +133,7 @@ onMounted(() => {
 
             <AppInput v-model="form.subject" label="Subject Line" placeholder="e.g. Interview Schedule for Teacher I" />
             
-            <AppTextarea v-model="form.content" label="Message Content" placeholder="Type your message here..." rows="8" />
+            <AppTextarea v-model="form.content" label="Message Content" placeholder="Type your message here..." :rows="8" />
           </div>
 
           <div class="pt-4 border-t border-[var(--border-main)]">

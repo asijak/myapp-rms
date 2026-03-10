@@ -17,7 +17,7 @@ const isHovered   = ref(false)
 // ── Account settings ──────────────────────────────────────────
 const showDropdown  = ref(false)
 const showSettings  = ref(false)
-const settingsTab   = ref('photo')
+const settingsTab   = ref('profile')
 const uploading     = ref(false)
 const isSaving      = ref(false)
 const fileInput     = ref(null)
@@ -25,6 +25,35 @@ const showCurrPw    = ref(false)
 const showNewPw     = ref(false)
 const showConfirmPw = ref(false)
 const pw = reactive({ current: '', new: '', confirm: '' })
+
+const profileForm = reactive({
+    username: '',
+    bio: '',
+    links: { facebook: '', linkedin: '', twitter: '' }
+})
+
+const initProfileForm = () => {
+    if (!authStore.user) return
+    profileForm.username = authStore.user.username || ''
+    profileForm.bio = authStore.user.bio || ''
+    profileForm.links = {
+        facebook: authStore.user.links?.facebook || '',
+        linkedin: authStore.user.links?.linkedin || '',
+        twitter: authStore.user.links?.twitter || '',
+    }
+}
+
+const saveProfileInfo = async () => {
+    isSaving.value = true
+    try {
+        const { data } = await apiClient.patch('/auth/update-me', profileForm)
+        authStore.user = data.user
+        toast.fire({ icon: 'success', title: 'Profile Updated' })
+        showSettings.value = false
+    } catch (err) {
+        toast.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message })
+    } finally { isSaving.value = false }
+}
 
 const avatarSrc = computed(() =>
     authStore.user?.avatarUrl
@@ -124,7 +153,7 @@ onMounted(() => {
                                 class="w-8 h-8 rounded-full object-cover border-2 border-[var(--color-primary-light)]" />
                             <div class="hidden lg:flex flex-col items-start leading-none">
                                 <p class="text-[11px] font-bold text-[var(--text-main)] tracking-tight capitalize">{{ authStore.user?.username || 'Admin' }}</p>
-                                <p class="text-[9px] text-[var(--text-muted)] font-medium uppercase mt-0.5">Admin Console</p>
+                                <p class="text-[9px] text-[var(--text-muted)] font-medium uppercase mt-0.5">{{ settingsStore.systemSubName }}</p>
                             </div>
                             <i class="pi pi-chevron-down text-[9px] text-[var(--text-faint)] hidden lg:block"></i>
                         </button>
@@ -139,21 +168,38 @@ onMounted(() => {
                                     <p class="text-xs text-[var(--text-muted)] truncate mt-0.5">{{ authStore.user?.email }}</p>
                                 </div>
                                 <div class="p-1.5 flex flex-col gap-0.5" role="none">
+                                    <button @click="showSettings = true; settingsTab = 'profile'; initProfileForm(); showDropdown = false"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors text-left"
+                                        role="menuitem">
+                                        <i class="pi pi-user-edit text-[var(--text-muted)] text-sm"></i>
+                                        <div class="leading-tight">
+                                            <p class="text-xs font-semibold">Account Settings</p>
+                                            <p class="text-[10px] text-[var(--text-muted)]">Username, bio, social links</p>
+                                        </div>
+                                    </button>
                                     <button @click="showSettings = true; settingsTab = 'photo'; showDropdown = false"
                                         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors text-left"
                                         role="menuitem">
-                                        <i class="pi pi-user text-[var(--text-muted)] text-sm"></i> Profile Settings
+                                        <i class="pi pi-camera text-[var(--text-muted)] text-sm"></i>
+                                        <div class="leading-tight">
+                                            <p class="text-xs font-semibold">Change Photo</p>
+                                            <p class="text-[10px] text-[var(--text-muted)]">Upload avatar or GIF</p>
+                                        </div>
                                     </button>
                                     <button @click="showSettings = true; settingsTab = 'password'; showDropdown = false"
                                         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-main)] hover:bg-[var(--bg-app)] transition-colors text-left"
                                         role="menuitem">
-                                        <i class="pi pi-lock text-[var(--text-muted)] text-sm"></i> Change Password
+                                        <i class="pi pi-lock text-[var(--text-muted)] text-sm"></i>
+                                        <div class="leading-tight">
+                                            <p class="text-xs font-semibold">Change Password</p>
+                                            <p class="text-[10px] text-[var(--text-muted)]">Update login credentials</p>
+                                        </div>
                                     </button>
                                     <div class="h-px bg-[var(--border-main)] my-1"></div>
                                     <button @click="authStore.logout()"
                                         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
                                         role="menuitem">
-                                        <i class="pi pi-sign-out text-sm"></i> Logout
+                                        <i class="pi pi-sign-out text-sm"></i> Sign Out
                                     </button>
                                 </div>
                             </div>
@@ -163,14 +209,26 @@ onMounted(() => {
             </header>
 
             <!-- Scrollable Content Area -->
-            <main class="flex-1 overflow-y-auto bg-[var(--bg-app)] custom-scrollbar">
-                <div class="p-6 lg:p-8 max-w-[90rem] mx-auto">
+            <main class="flex-1 overflow-y-auto bg-[var(--bg-app)] custom-scrollbar flex flex-col">
+                <div class="p-6 lg:p-8 max-w-[90rem] mx-auto w-full flex-1">
                     <router-view v-slot="{ Component, route }">
                         <transition name="page-fade" mode="out-in">
                             <component :is="Component" :key="route.path" />
                         </transition>
                     </router-view>
                 </div>
+
+                <!-- Footer -->
+                <footer class="mt-auto border-t border-[var(--border-main)] bg-[var(--surface)]/50 px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <p class="text-[11px] font-medium text-[var(--text-muted)] tracking-tight">
+                        &copy; {{ new Date().getFullYear() }} <span class="font-bold text-[var(--text-main)]">{{ settingsStore.copyrightText }}</span>
+                    </p>
+                    <div class="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">
+                        <span class="hover:text-[var(--color-primary)] cursor-pointer transition-colors">{{ settingsStore.systemName }} v2.4.0</span>
+                        <div class="w-1 h-1 rounded-full bg-[var(--border-main)]"></div>
+                        <span class="hover:text-[var(--text-main)] cursor-pointer transition-colors">Internal Console</span>
+                    </div>
+                </footer>
             </main>
         </div>
 
@@ -194,7 +252,7 @@ onMounted(() => {
                 </div>
 
                 <div class="flex border-b border-[var(--border-main)]" role="tablist">
-                    <button v-for="tab in [{id:'photo',icon:'pi-user',label:'Profile Photo'},{id:'password',icon:'pi-lock',label:'Password'}]"
+                    <button v-for="tab in [{id:'profile',icon:'pi-user-edit',label:'Profile'},{id:'photo',icon:'pi-camera',label:'Photo'},{id:'password',icon:'pi-lock',label:'Password'}]"
                         :key="tab.id" @click="settingsTab = tab.id"
                         :aria-selected="settingsTab === tab.id" role="tab"
                         :class="['flex-1 py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors border-b-2',
@@ -203,6 +261,40 @@ onMounted(() => {
                                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-app)]']">
                         <i :class="['pi text-[11px]', tab.icon]"></i>{{ tab.label }}
                     </button>
+                </div>
+
+                <!-- TAB: Profile Info -->
+                <div v-if="settingsTab === 'profile'" class="p-6 flex flex-col gap-5" role="tabpanel">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Username</label>
+                        <input v-model="profileForm.username" class="input"
+                            placeholder="Your unique username" />
+                        <p class="text-[10px] text-[var(--text-faint)]">Lowercase, no spaces. Used for login and identification.</p>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Bio <span class="normal-case font-normal text-[var(--text-faint)]">({{ profileForm.bio.length }}/240)</span></label>
+                        <textarea v-model="profileForm.bio" class="input resize-none" rows="3" maxlength="240"
+                            placeholder="A short bio about your role or professional background..."></textarea>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-3">Professional Links</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                                    <i class="pi pi-facebook text-blue-600 text-sm"></i>
+                                </div>
+                                <input v-model="profileForm.links.facebook" class="input flex-1"
+                                    placeholder="facebook.com/..." />
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
+                                    <i class="pi pi-linkedin text-sky-700 text-sm"></i>
+                                </div>
+                                <input v-model="profileForm.links.linkedin" class="input flex-1"
+                                    placeholder="linkedin.com/in/..." />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div v-if="settingsTab === 'photo'" class="p-6 flex flex-col items-center gap-4" role="tabpanel">
@@ -251,6 +343,12 @@ onMounted(() => {
 
                 <div class="px-6 py-4 border-t border-[var(--border-main)] bg-[var(--bg-app)] flex justify-end gap-3">
                     <button @click="showSettings = false" class="btn-secondary h-9 px-4 text-sm">Cancel</button>
+                    <button v-if="settingsTab === 'profile'"
+                        @click="saveProfileInfo" :disabled="isSaving"
+                        class="btn-primary h-9 px-5 text-sm disabled:opacity-50 flex items-center gap-2">
+                        <i v-if="isSaving" class="pi pi-spin pi-spinner text-xs"></i>
+                        {{ isSaving ? 'Saving...' : 'Save Profile' }}
+                    </button>
                     <button v-if="settingsTab === 'password' && !authStore.user?.googleId"
                         @click="handlePwUpdate" :disabled="isSaving"
                         class="btn-primary h-9 px-5 text-sm disabled:opacity-50 flex items-center gap-2">

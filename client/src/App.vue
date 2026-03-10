@@ -8,9 +8,11 @@ const authStore     = useAuthStore()
 const settingsStore = useSettingsStore()
 
 onMounted(async () => {
-  if (!authStore.initialized) {
-    await authStore.fetchCurrentUser()
-  }
+  // Parallelize init calls for better performance
+  await Promise.all([
+    settingsStore.init(),
+    !authStore.initialized ? authStore.fetchCurrentUser() : Promise.resolve()
+  ])
 })
 </script>
 

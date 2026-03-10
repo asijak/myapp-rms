@@ -46,6 +46,39 @@ export const getOverview = catchAsync(async (req, res) => {
   });
 });
 
+// ── 1.5 Admin Dashboard Overview ──────────────────────────────────────────
+export const getDashboard = catchAsync(async (req, res) => {
+  const [jobCount, appCount, userCount, rqaCount] = await Promise.all([
+    Job.countDocuments(),
+    Application.countDocuments(),
+    User.countDocuments(),
+    CAL.countDocuments({ isFinalized: true })
+  ]);
+
+  const pipeline = await Application.aggregate([
+    { $group: { _id: "$status", count: { $sum: 1 } } }
+  ]);
+
+  const topVacancies = await Job.find({ status: 'published' })
+    .sort({ 'applications.length': -1 })
+    .limit(5)
+    .select('positionTitle positionCode applications');
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      metrics: {
+        totalJobs: jobCount,
+        totalApplications: appCount,
+        totalUsers: userCount,
+        finalizedRQA: rqaCount
+      },
+      pipeline,
+      topVacancies
+    }
+  });
+});
+
 // ── 2. Time-based Trends ──────────────────────────────────────────────────
 export const getTrends = catchAsync(async (req, res) => {
   const sixMonthsAgo = new Date();

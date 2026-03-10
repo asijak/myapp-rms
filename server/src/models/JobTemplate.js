@@ -12,7 +12,7 @@ const jobTemplateSchema = new mongoose.Schema(
       minExperienceMonths:   { type: Number, default: 0 },
       trainings:             { type: String, default: "" },
       minTrainingHours:      { type: Number, default: 0 },
-      eligibility:           { type: String, default: "" },
+      eligibility:           [{ type: String }],
       competencyRequirements: [{ type: String }],
     },
 

@@ -241,6 +241,10 @@ const toggleNone = (field) => {
   form.value[field] = form.value[field] === NONE_REQ ? '' : NONE_REQ
 }
 
+const toggleNoneTemplate = (field) => {
+  templateForm.value[field] = templateForm.value[field] === NONE_REQ ? '' : NONE_REQ
+}
+
 // ─── Eligibility multi-tag helpers ─────────────────────────────────────────
 const addEligibility = (arr, value) => {
   if (!value || arr.includes(value)) return
@@ -752,7 +756,7 @@ const confirmBulkArchive = async () => {
         </div>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="min-h-[320px]">
+      <form @submit.prevent="handleSubmit" class="min-h-[480px] overflow-y-auto custom-scrollbar pr-1">
 
         <!-- ── 1. Position Identity ──────────────────────────────────── -->
         <section v-show="activeSection === 0" class="space-y-4">
@@ -798,7 +802,7 @@ const confirmBulkArchive = async () => {
           </div>
           <div>
             <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Duties &amp; Description</label>
-            <AppTextarea v-model="form.description" rows="3" placeholder="Describe the duties, responsibilities, and scope of the position..." />
+            <AppTextarea v-model="form.description" :rows="3" placeholder="Describe the duties, responsibilities, and scope of the position..." />
           </div>
         </section>
 
@@ -1101,72 +1105,81 @@ const confirmBulkArchive = async () => {
               </div>
             </div>
 
-            <!-- ── LIST VIEW ──────────────────────────────────────────── -->
+            <!-- ── LIST VIEW (Refined) ──────────────────────────────────────────── -->
             <template v-if="templateView === 'list'">
-              <div class="px-5 py-3 border-b border-[var(--border-main)] shrink-0">
-                <div class="relative">
-                  <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs pointer-events-none"></i>
-                  <input v-model="templateSearch" type="search" placeholder="Search templates..."
-                    class="w-full h-9 pl-8 pr-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-shadow" autofocus />
+              <div class="px-5 py-4 border-b border-[var(--border-main)] shrink-0">
+                <div class="relative group">
+                  <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none group-focus-within:text-[var(--color-primary)] transition-colors"></i>
+                  <input v-model="templateSearch" type="search" placeholder="Search templates by title or code..."
+                    class="w-full h-11 pl-10 pr-4 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm font-bold uppercase tracking-tight
+                           text-[var(--text-main)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 
+                           focus:border-[var(--color-primary)] transition-all" autofocus />
                 </div>
-                <p class="text-[9px] text-[var(--text-faint)] mt-1.5">
-                  {{ filteredTemplates.length }} template{{ filteredTemplates.length !== 1 ? 's' : '' }}
-                  <span v-if="!isEditing"> — click <span class="font-bold">Use</span> to prefill the posting form</span>
-                </p>
+                <div class="flex items-center justify-between mt-3 px-1">
+                  <p class="text-[9px] text-[var(--text-faint)] font-bold uppercase tracking-widest">
+                    {{ filteredTemplates.length }} template{{ filteredTemplates.length !== 1 ? 's' : '' }} found
+                  </p>
+                  <p v-if="!isEditing" class="text-[9px] text-[var(--color-primary)] font-black uppercase tracking-widest">
+                    Select a template to prefill form
+                  </p>
+                </div>
               </div>
 
-              <div class="flex-1 overflow-y-auto custom-scrollbar">
-                <div v-if="filteredTemplates.length === 0" class="py-16 flex flex-col items-center gap-3 text-center px-6">
-                  <div class="w-12 h-12 rounded-2xl bg-[var(--bg-app)] border border-[var(--border-main)] flex items-center justify-center">
-                    <i class="pi pi-bookmark text-xl text-[var(--text-faint)]"></i>
+              <div class="flex-1 overflow-y-auto custom-scrollbar min-h-[360px]">
+                <div v-if="filteredTemplates.length === 0" class="py-24 flex flex-col items-center gap-4 text-center px-6">
+                  <div class="w-14 h-14 rounded-2xl bg-[var(--bg-app)] border border-[var(--border-main)] flex items-center justify-center">
+                    <i class="pi pi-bookmark text-2xl text-[var(--text-faint)]"></i>
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-[var(--text-main)]">No templates yet</p>
-                    <p class="text-xs text-[var(--text-muted)] mt-0.5">Create your first template to speed up posting.</p>
+                    <h5 class="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">No templates yet</h5>
+                    <p class="text-[11px] text-[var(--text-muted)] mt-1.5 max-w-[240px] font-medium leading-relaxed">Create your first template to speed up recruitment posting.</p>
                   </div>
-                  <button type="button" @click="openTemplateCreate"
-                    class="h-8 px-4 rounded-lg bg-[var(--color-primary)] text-white text-xs font-bold hover:bg-[var(--color-primary-dark)] transition-colors">
+                  <AppButton variant="primary" size="sm" class="mt-4" @click="openTemplateCreate">
                     Create Template
-                  </button>
+                  </AppButton>
                 </div>
 
-                <div v-else class="divide-y divide-[var(--border-main)]">
-                  <div v-for="tpl in filteredTemplates" :key="tpl._id" class="flex items-start gap-3 px-5 py-3.5 hover:bg-[var(--bg-app)] transition-colors group">
-                    <!-- Track dot -->
-                    <div :class="['mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ring-1',
-                      tpl.hiringTrack === 'teaching' ? 'bg-[var(--color-primary)] ring-[var(--color-primary)]/30' :
-                      tpl.hiringTrack === 'teaching_related' ? 'bg-purple-500 ring-purple-200' :
-                      'bg-[var(--text-faint)] ring-[var(--border-main)]']"></div>
+                <div v-else class="p-4 space-y-2.5">
+                  <div v-for="tpl in filteredTemplates" :key="tpl._id" 
+                    class="flex items-center gap-4 p-4 rounded-2xl border transition-all text-left bg-[var(--surface)] border-[var(--border-main)] hover:border-[var(--color-primary)] hover:shadow-md group">
+                    
+                    <!-- Track Icon -->
+                    <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
+                      tpl.hiringTrack === 'teaching' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                      tpl.hiringTrack === 'teaching_related' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+                      'bg-slate-50 text-slate-600 border border-slate-100']">
+                      <i :class="['pi text-sm', tpl.hiringTrack === 'teaching' ? 'pi-book' : 'pi-id-card']"></i>
+                    </div>
+
                     <!-- Info -->
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-semibold text-[var(--text-main)] leading-tight truncate">{{ tpl.positionTitle }}</p>
-                      <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span class="font-mono text-[10px] text-[var(--text-muted)]">{{ tpl.positionCode }}</span>
-                        <span class="text-[var(--text-faint)] text-[9px]">•</span>
-                        <span class="text-[10px] text-[var(--text-muted)]">SG-{{ tpl.salaryGrade }}</span>
-                        <span class="text-[var(--text-faint)] text-[9px]">•</span>
-                        <span class="text-[10px] text-[var(--text-muted)]">{{ trackLabel[tpl.hiringTrack] }}</span>
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-[var(--bg-app)] border border-[var(--border-main)] text-[var(--text-muted)] uppercase tracking-widest">
+                          SG-{{ tpl.salaryGrade || '?' }}
+                        </span>
+                        <span class="text-[8px] font-black text-[var(--text-faint)] uppercase tracking-widest">{{ tpl.employmentType }}</span>
                       </div>
-                      <!-- QS preview -->
-                      <div v-if="tpl.qualifications?.eligibility?.length" class="mt-1 text-[9px] text-[var(--text-faint)] truncate">
-                        <i class="pi pi-verified text-[8px] mr-1"></i>{{ Array.isArray(tpl.qualifications.eligibility) ? tpl.qualifications.eligibility.join(' / ') : tpl.qualifications.eligibility }}
-                      </div>
+                      <p class="text-sm font-black text-[var(--text-main)] leading-none truncate uppercase tracking-tight group-hover:text-[var(--color-primary)] transition-colors">{{ tpl.positionTitle }}</p>
+                      <p class="text-[10px] font-mono font-bold text-[var(--text-faint)] mt-1.5 uppercase tracking-tighter">{{ tpl.positionCode || 'NO-CODE' }}</p>
                     </div>
+
                     <!-- Actions -->
-                    <div class="flex items-center gap-1 flex-shrink-0">
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
                       <!-- Use button (only when opening from create form) -->
                       <button v-if="!isEditing" type="button" @click="prefillFromTemplate(tpl)"
-                        class="h-7 px-2.5 rounded-lg bg-[var(--color-primary)] text-white text-[10px] font-bold hover:bg-[var(--color-primary-dark)] transition-colors flex items-center gap-1">
-                        <i class="pi pi-copy text-[8px]"></i> Use
+                        class="h-8 px-4 rounded-xl bg-[var(--color-primary)] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-primary-dark)] transition-all shadow-sm hover:shadow-primary/30 flex items-center gap-2">
+                        Use Template
                       </button>
-                      <button type="button" @click="openTemplateEdit(tpl)" title="Edit template"
-                        class="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)] transition-colors">
-                        <i class="pi pi-pencil text-xs"></i>
-                      </button>
-                      <button type="button" @click="deleteTemplate(tpl)" title="Delete template"
-                        class="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors">
-                        <i class="pi pi-trash text-xs"></i>
-                      </button>
+                      <div class="flex items-center gap-1 border-l border-[var(--border-main)] pl-1.5 ml-1">
+                        <button type="button" @click="openTemplateEdit(tpl)" title="Edit template"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-app)] hover:text-[var(--color-primary)] transition-colors">
+                          <i class="pi pi-pencil text-xs"></i>
+                        </button>
+                        <button type="button" @click="deleteTemplate(tpl)" title="Delete template"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors">
+                          <i class="pi pi-trash text-xs"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1193,7 +1206,7 @@ const confirmBulkArchive = async () => {
                 </button>
               </div>
 
-              <div class="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 space-y-4">
+              <div class="flex-1 min-h-[420px] overflow-y-auto custom-scrollbar px-5 py-4 space-y-4">
 
                 <!-- ── TAB: Position ── -->
                 <template v-if="templateFormTab === 'position'">
@@ -1249,31 +1262,57 @@ const confirmBulkArchive = async () => {
 
                   <!-- Education -->
                   <div>
-                    <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Education</label>
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Education</label>
+                      <button type="button" @click="toggleNoneTemplate('education')"
+                        :class="['flex items-center gap-1 h-5 px-2 rounded-full text-[9px] font-bold border transition-all',
+                          templateForm.education === NONE_REQ ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30' : 'bg-[var(--bg-app)] text-[var(--text-faint)] border-[var(--border-main)] hover:text-[var(--text-muted)]']">
+                        <i :class="['pi text-[8px]', templateForm.education === NONE_REQ ? 'pi-check-circle' : 'pi-minus-circle']"></i> None Required
+                      </button>
+                    </div>
                     <input v-model="templateForm.education" placeholder="e.g. Bachelor of Secondary Education"
-                      class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all" />
+                      :disabled="templateForm.education === NONE_REQ"
+                      class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all disabled:opacity-50" />
                   </div>
 
                   <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Experience</label>
+                    <div class="col-span-2 sm:col-span-1">
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Experience</label>
+                        <button type="button" @click="toggleNoneTemplate('experience')"
+                          :class="['flex items-center gap-1 h-5 px-2 rounded-full text-[9px] font-bold border transition-all',
+                            templateForm.experience === NONE_REQ ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30' : 'bg-[var(--bg-app)] text-[var(--text-faint)] border-[var(--border-main)] hover:text-[var(--text-muted)]']">
+                          <i :class="['pi text-[8px]', templateForm.experience === NONE_REQ ? 'pi-check-circle' : 'pi-minus-circle']"></i> None
+                        </button>
+                      </div>
                       <input v-model="templateForm.experience" placeholder="e.g. 2 years relevant experience"
-                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all" />
+                        :disabled="templateForm.experience === NONE_REQ"
+                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all disabled:opacity-50" />
                     </div>
                     <div>
                       <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Min Exp (months)</label>
                       <input v-model.number="templateForm.minExperienceMonths" type="number" min="0" placeholder="0"
-                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all" />
+                        :disabled="templateForm.experience === NONE_REQ"
+                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all disabled:opacity-50" />
                     </div>
-                    <div>
-                      <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Training</label>
+                    <div class="col-span-2 sm:col-span-1">
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Training</label>
+                        <button type="button" @click="toggleNoneTemplate('trainings')"
+                          :class="['flex items-center gap-1 h-5 px-2 rounded-full text-[9px] font-bold border transition-all',
+                            templateForm.trainings === NONE_REQ ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30' : 'bg-[var(--bg-app)] text-[var(--text-faint)] border-[var(--border-main)] hover:text-[var(--text-muted)]']">
+                          <i :class="['pi text-[8px]', templateForm.trainings === NONE_REQ ? 'pi-check-circle' : 'pi-minus-circle']"></i> None
+                        </button>
+                      </div>
                       <input v-model="templateForm.trainings" placeholder="e.g. 8 hours relevant training"
-                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all" />
+                        :disabled="templateForm.trainings === NONE_REQ"
+                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all disabled:opacity-50" />
                     </div>
                     <div>
                       <label class="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Min Training (hours)</label>
                       <input v-model.number="templateForm.minTrainingHours" type="number" min="0" placeholder="0"
-                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all" />
+                        :disabled="templateForm.trainings === NONE_REQ"
+                        class="w-full h-10 px-3 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 focus:border-[var(--color-primary)] transition-all disabled:opacity-50" />
                     </div>
                   </div>
 

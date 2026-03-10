@@ -9,7 +9,7 @@ router.get("/", settingsController.getSettings);
 router.put(
   "/",
   protect,
-  requirePermission("settings_manage"),
+  requirePermission("set_manage"),
   uploadSystemLogo.single("logo"),
   settingsController.updateSettings,
 );
