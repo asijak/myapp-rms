@@ -84,9 +84,12 @@ const profileSchema = new mongoose.Schema(
         degree: { type: String, required: true },
         periodFrom: String,
         periodTo: String,
-        notGraduated: { type: Boolean, default: false },
-        unitsEarned: Number,
-        yearGraduated: Number,
+        status: { 
+          type: String, 
+          default: "Graduated" 
+        }, // e.g. Graduated, CAR, Units Earned, Associate
+        unitsEarned: String,
+        yearGraduated: String,
         honorsReceived: String,
       },
     ],
@@ -95,8 +98,7 @@ const profileSchema = new mongoose.Schema(
     training: [
       {
         title: { type: String, required: true },
-        periodFrom: Date,
-        periodTo: Date,
+        dateIssued: Date,
         hours: { type: Number, required: true },
         typeOfLD: { type: String, enum: ["Technical", "Managerial", "Supervisory", "Academic", "Foundation", "Other"] },
         provider: String,
