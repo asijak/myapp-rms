@@ -1,67 +1,38 @@
 <script setup>
-import { onMounted } from 'vue';
-import { useAuthStore } from '@/stores/auth';
+import { onMounted } from 'vue'
+import { useAuthStore }    from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
+import AppToaster from '@/components/ui/AppToaster.vue'
 
-const authStore = useAuthStore();
+const authStore     = useAuthStore()
+const settingsStore = useSettingsStore()
 
 onMounted(async () => {
   if (!authStore.initialized) {
-    await authStore.fetchCurrentUser();
+    await authStore.fetchCurrentUser()
   }
-});
-
-
+})
 </script>
 
 <template>
-  <router-view v-if="authStore.initialized" />
-  <div v-else class="loading-spinner">
-    <div class="spinner"></div>
-    <p>Loading your dashboard...</p>
+  <!-- Premium loading state matching design system -->
+  <div v-if="!authStore.initialized"
+    class="fixed inset-0 flex flex-col items-center justify-center gap-4"
+    style="background: var(--bg-app);">
+    <div
+      class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg"
+      style="background: linear-gradient(180deg, #5558A0 0%, #4A4D8F 100%); box-shadow: var(--shadow-primary);">
+      <i class="pi pi-shield text-white text-base" aria-hidden="true"></i>
+    </div>
+    <div class="flex flex-col items-center gap-1">
+      <div class="w-5 h-5 rounded-full border-2 border-[var(--border-main)] border-t-[var(--color-primary)] animate-spin"></div>
+      <p class="text-xs font-medium text-[var(--text-muted)] mt-1">Loading...</p>
+    </div>
   </div>
+
+  <template v-else>
+    <router-view />
+    <!-- Global toast notifications (Sonner-inspired) -->
+    <AppToaster position="bottom-right" />
+  </template>
 </template>
-
-<style scoped>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: #f9f9f9;
-  /* Updated font-family to Avenir with fallbacks */
-  font-family: 'Avenir', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #555;
-}
-
-.loading-spinner p {
-  margin-top: 16px;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.spinner {
-  width: 60px;
-  height: 60px;
-  border: 6px solid #e0e0e0;
-  border-top: 6px solid #4f46e5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>

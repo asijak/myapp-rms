@@ -30,20 +30,31 @@ const routes = [
     props: (route) => ({ email: route.query.email }),
     meta: { guestOnly: true },
   },
+  {
+    path: '/auth/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/pages/auth/ForgotPassword.vue'),
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/auth/reset-password/:token',
+    name: 'ResetPassword',
+    component: () => import('@/pages/auth/ResetPassword.vue'),
+    meta: { guestOnly: true },
+  },
 
   // ==========================================
   // APPLICANT / USER ROUTES
   // ==========================================
   {
-    path: '/vacancies',
-    name: 'Job Vacancies',
-    component: () => import('@/pages/user/Vacancies.vue'),
-    // Assuming guests can view vacancies, but applying requires auth
-  },
-  {
     path: '/user',
+    component: () => import('@/layouts/UserLayout.vue'),
     meta: { requiresAuth: true, role: 'user' },
     children: [
+      {
+        path: '',
+        redirect: '/user/dashboard',
+      },
       {
         path: 'dashboard',
         name: 'User Dashboard',
@@ -53,6 +64,16 @@ const routes = [
         path: 'applications',
         name: 'My Applications',
         component: () => import('@/pages/user/Applications.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'My Profile',
+        component: () => import('@/pages/user/Profile.vue'),
+      },
+      {
+        path: 'vacancies',
+        name: 'Job Vacancies',
+        component: () => import('@/pages/user/Vacancies.vue'),
       },
     ],
   },
@@ -75,14 +96,21 @@ const routes = [
         component: () => import('@/pages/admin/Dashboard.vue'),
       },
       {
+        path: 'analytics',
+        name: 'Job Analytics',
+        component: () => import('@/pages/admin/JobAnalytics.vue'),
+      },
+      {
         path: 'roles-permissions',
         name: 'Roles & Permissions',
         component: () => import('@/pages/admin/RolesPermissions.vue'),
+        meta: { permission: 'role_manage' },
       },
       {
         path: 'user-list',
         name: 'User List',
         component: () => import('@/pages/admin/UserList.vue'),
+        meta: { permission: 'user_view' },
       },
       {
         path: 'settings',
@@ -110,9 +138,19 @@ const routes = [
         component: () => import('@/pages/admin/Evaluations.vue'),
       },
       {
+        path: 'rubrics',
+        name: 'Rubrics',
+        component: () => import('@/pages/admin/Rubrics.vue'),
+      },
+      {
         path: 'rqa',
         name: 'Registry of Qualified Applicants',
         component: () => import('@/pages/admin/RQA.vue'),
+      },
+      {
+        path: 'appointments',
+        name: 'Final Appointments',
+        component: () => import('@/pages/admin/Appointments.vue'),
       },
       {
         path: 'announcements',
@@ -122,9 +160,12 @@ const routes = [
     ],
   },
 
-  // ==========================================
-  // FALLBACK ROUTE
-  // ==========================================
+  // Catch-all for 404
+  {
+    path: '/not-authorized',
+    name: 'NotAuthorized',
+    component: () => import('@/components/errors/NotAuthorized.vue'),
+  },
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',
@@ -147,28 +188,37 @@ router.beforeEach(async (to, from) => {
 
   const isLoggedIn = authStore.isAuthenticated
 
-  // If already logged in, don't let them see /auth pages
-  if (isLoggedIn && to.path.startsWith('/auth')) {
+  // 2. Protect Guest routes (Login/Register)
+  if (to.meta.guestOnly && isLoggedIn) {
     return authStore.dashboardRoute
   }
 
-  // 4. Auth requirement
+  // 3. Protect Auth-required routes
   if (to.meta.requiresAuth && !isLoggedIn) {
     return { path: '/auth/login', query: { redirect: to.fullPath } }
   }
 
-  // 5. Role protection
-  if (to.meta.role) {
-    if (to.meta.role === 'admin' && !authStore.isStaff) {
-      return '/user/dashboard'
+  // If the user IS logged in, enforce the strict Admin vs User boundaries:
+  if (isLoggedIn) {
+    // 4. ADMIN BOUNDARY: "User" role trying to access /admin
+    // If route requires admin, but user is NOT an admin
+    if (to.meta.role === 'admin' && !authStore.isAdmin) {
+      return '/not-authorized' // Or redirect to '/user/dashboard' if you prefer
     }
-    // Added a more specific check here
-    if (to.meta.role === 'user' && !isLoggedIn) {
-      return '/auth/login'
+
+    // 5. USER BOUNDARY: "Admin" role trying to access /user
+    // If route requires user, but user IS an admin
+    if (to.meta.role === 'user' && authStore.isAdmin) {
+      return '/admin/dashboard'
+    }
+
+    // 6. Specific Permission Checks inside Admin
+    if (to.meta.permission && !authStore.can(to.meta.permission)) {
+      return '/admin/dashboard' // Bump them back to admin root if they lack permission
     }
   }
 
-  // 6. Proceed normally
+  // 7. Proceed normally
   return true
 })
 

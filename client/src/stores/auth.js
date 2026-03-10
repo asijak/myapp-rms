@@ -12,33 +12,39 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.user,
 
-    // ✅ Staff logic: Checks if user has any administrative-level role
-    isStaff: (state) => {
-      if (!state.user?.roles) return false
-      const staffRoles = ['admin', 'super_admin', 'hr_manager', 'registrar']
-      return state.user.roles.some((role) => staffRoles.includes(role))
-    },
-
-    // ✅ Permission Check: Does the user have a specific permission?
-    // Usage: authStore.can('edit_user')
-    can: (state) => (permission) => {
+    isAdmin: (state) => {
       if (!state.user) return false
-      if (state.user.roles?.includes('super_admin')) return true // God mode
-      return state.user.permissions?.includes(permission) || false
+      return state.user.roles?.some((role) => {
+        const roleName = (typeof role === 'object' ? role.name : role)?.toLowerCase()
+        return roleName !== 'user' && roleName !== 'applicant'
+      })
     },
 
     dashboardRoute: (state) => {
       if (!state.user) return '/auth/login'
-      return state.isStaff ? '/admin/dashboard' : '/user/dashboard'
+      return state.isAdmin ? '/admin/dashboard' : '/user/dashboard'
     },
 
-    hasRole: (state) => (roleName) => {
-      return state.user?.roles?.includes(roleName) || false
+    can: (state) => (permission) => {
+      if (!state.user) return false
+      // Super admin bypasses all checks
+      const isSuperAdmin = state.user.roles?.some((r) =>
+        (typeof r === 'object' ? r.name : r)?.toLowerCase().includes('super'),
+      )
+      if (isSuperAdmin) return true
+      // Check flattened permissions from populated roles
+      const perms =
+        state.user.roles?.flatMap((r) => (typeof r === 'object' ? (r.permissions ?? []) : [])) ?? []
+      return perms.includes(permission) || perms.includes('all')
     },
   },
 
   actions: {
-    // 1. Initial Load: Check if we are already logged in via cookie
+    handleSocialLogin(userData) {
+      this.user = userData
+      this.initialized = true
+    },
+
     async fetchCurrentUser() {
       if (this.initialized) return
       try {
@@ -51,46 +57,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // 2. Standard Registration
-    async register(userData) {
-      this.loading = true
-      this.error = null
-      try {
-        const { data } = await apiClient.post('/auth/register', userData)
-        return data // Will likely tell user to check email for OTP
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Registration failed'
-        throw err
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // 3. OTP Verification
-    async verifyOtp(email, otp) {
-      this.loading = true
-      this.error = null
-      try {
-        const { data } = await apiClient.post('/auth/verify-otp', { email, otp })
-        this.user = data.user
-        this.initialized = true
-        return data
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Invalid OTP'
-        throw err
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // 4. Standard Login
     async login(credentials) {
       this.loading = true
-      this.error = null
       try {
         const { data } = await apiClient.post('/auth/login', credentials)
         this.user = data.user
         this.initialized = true
+        return data
       } catch (err) {
         this.error = err.response?.data?.message || 'Login failed'
         throw err
@@ -99,18 +72,12 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    handleSocialLogin(userData) {
-      this.user = userData
-      this.initialized = true
-    },
-
     async logout() {
       try {
         await apiClient.post('/auth/logout')
       } finally {
         this.user = null
-        this.initialized = true
-
+        this.initialized = false
         window.location.href = '/'
       }
     },

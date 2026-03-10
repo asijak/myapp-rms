@@ -1,5 +1,5 @@
 import * as authService from "../services/auth.service.js";
-import sendEmail from "../services/email.service.js";
+import { sendEmail } from "../services/email.service.js";
 import User from "../models/User.js";
 import fs from "fs";
 import path from "path";
@@ -43,6 +43,7 @@ export const login = catchAsync(async (req, res, next) => {
     user: formatUserResponse(user),
   });
 });
+
 export const googleAuthCallback = catchAsync(async (req, res, next) => {
   if (!req.user) {
     return res.redirect(
@@ -55,14 +56,17 @@ export const googleAuthCallback = catchAsync(async (req, res, next) => {
   await updateLoginTimestamp(user);
   sendTokenCookie(res, user);
 
-  const roleNames = user.roles.map((r) => r.name);
-  const isAdmin =
-    roleNames.includes("admin") || roleNames.includes("super_admin");
+  // FIXED: This now exactly matches your Frontend Pinia logic
+  const isDepEd = user.email.toLowerCase().endsWith("@deped.gov.ph");
+  const hasStaffRole = user.roles.some(
+    (r) => r.name !== "user" && r.name !== "applicant",
+  );
 
-  const redirectTarget = isAdmin ? "admin" : "user";
+  const redirectTarget = isDepEd || hasStaffRole ? "admin" : "user";
 
   res.redirect(`${process.env.CLIENT_URL}/${redirectTarget}/dashboard`);
 });
+
 export const logout = (req, res, next) => {
   res.cookie("token", "loggedout", {
     httpOnly: true,
@@ -80,10 +84,15 @@ export const getMe = catchAsync(async (req, res, next) => {
 });
 
 export const updateMe = catchAsync(async (req, res, next) => {
-  const { username } = req.body;
+  const { username, bio, links } = req.body;
+  const update = {};
+  if (username !== undefined) update.username = username;
+  if (bio      !== undefined) update.bio      = bio;
+  if (links    !== undefined) update.links    = links;
+
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
-    { username },
+    { $set: update },
     { new: true, runValidators: true },
   ).populate("roles");
 

@@ -13,7 +13,8 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).populate("roles");
+    // CRITICAL: populate("roles") must happen here so req.user always has role names
+    const user = await User.findById(decoded.id).select('-password -otp -passwordResetToken -passwordResetExpires').populate("roles");
 
     if (!user) {
       return res.status(401).json({ message: "User no longer exists" });
@@ -39,9 +40,14 @@ export const requirePermission = (permission) => {
     }
 
     const isSuperAdmin = req.user.roles.some(
-      (role) => role.name === "super_admin",
+      (role) => role.name === "super_admin" || role.name === "Super Admin",
     );
     if (isSuperAdmin) return next();
+
+    const hasWildcard = req.user.roles.some((role) =>
+      role.permissions?.includes("all"),
+    );
+    if (hasWildcard) return next();
 
     const hasPermission = req.user.roles.some((role) =>
       role.permissions?.includes(permission),

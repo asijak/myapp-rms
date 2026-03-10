@@ -19,70 +19,32 @@ const applicationSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔒 Master Lock: Unlimited edits allowed UNTIL this is true
     isVerified: { type: Boolean, default: false },
     verifiedAt: Date,
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
-    /**
-     * SECTION A: APPLICANT DATA (Snapshot from Profile)
-     * These fields are filled from the Profile model but stored here.
-     */
-    applicantData: {
-      personalInfo: { type: mongoose.Schema.Types.Mixed },
-      education: [
-        {
-          level: {
-            type: String,
-            enum: ["Vocational", "Bachelor", "Masteral", "Doctorate"],
-          },
-          degree: String,
-          units: Number,
-          school: String,
-          yearGraduated: Number,
-        },
-      ],
-      training: [
-        {
-          title: String,
-          hours: Number,
-          dateIssued: Date,
-          provider: String,
-        },
-      ],
-      experience: [
-        {
-          position: String,
-          company: String,
-          months: Number,
-          isGovernment: { type: Boolean, default: false },
-        },
-      ],
-      performanceRating: {
-        score: Number, // e.g., 4.500
-        adjective: String, // e.g., "Very Satisfactory"
-        periodCovered: String,
-      },
+    verificationChecklist: {
+      education:   { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      training:    { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      experience:  { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      eligibility: { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
+      performance: { checked: { type: Boolean, default: false }, note: { type: String, default: "" } },
     },
 
-    /**
-     * SECTION B: HR RATING (Point System - DepEd MSP)
-     */
-    hrRating: {
-      educationPoints: { type: Number, default: 0 },
-      trainingPoints: { type: Number, default: 0 }, // Only last 5 years
-      experiencePoints: { type: Number, default: 0 },
-      performancePoints: { type: Number, default: 0 }, // Recent 1 year
-      outstandingAccomplishments: { type: Number, default: 0 },
-      appEducationPoints: { type: Number, default: 0 },
-      appLearningPoints: { type: Number, default: 0 },
-      potentialPoints: {
-        writtenTest: { type: Number, default: 0 },
-        bei: { type: Number, default: 0 }, // Behavioral Event Interview
-        workSample: { type: Number, default: 0 },
-      },
-      remarks: String,
+    applicantData: {
+      personalInfo: { type: mongoose.Schema.Types.Mixed },
+      education: [],
+      eligibility: [],
+      training: [],
+      experience: [],
+      performanceRating: {},
     },
+
+    hrRating: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+    isEvaluated: { type: Boolean, default: false },
+    evaluatedAt: Date,
+    evaluatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     totalScore: { type: Number, default: 0 },
     status: {
@@ -93,9 +55,24 @@ const applicationSchema = new mongoose.Schema(
         "comparative_assessment",
         "ranked",
         "disqualified",
+        "appointed",
       ],
       default: "applied",
     },
+    appointmentData: {
+      dateAppointed: Date,
+      effectiveDate: Date,
+      itemNumber: String,
+      remarks: String,
+    },
+    attachments: [
+      {
+        type: { type: String, enum: ["transcript", "diploma", "eligibility", "training", "experience", "pds_signed", "id_proof", "service_record", "training_cert"] },
+        fileUrl: String,
+        fileName: String,
+        uploadedAt: { type: Date, default: Date.now }
+      }
+    ],
     isQualified: { type: Boolean, default: true },
     disqualificationReason: {
       type: String,
@@ -110,37 +87,29 @@ const applicationSchema = new mongoose.Schema(
   },
 );
 
-/**
- * 🔹 AUTO-INCREMENT CODE: APP-YYYY-0001 (Per Job)
- */
-applicationSchema.pre("save", async function (next) {
+applicationSchema.pre("save", async function () {
   if (this.isNew && !this.applicationCode) {
-    const year = new Date().getFullYear();
+    const jobSuffix = this.submittedTo.toString().slice(-4).toUpperCase();
     const count = await mongoose.model("Application").countDocuments({
       submittedTo: this.submittedTo,
-      createdAt: {
-        $gte: new Date(year, 0, 1),
-        $lte: new Date(year, 11, 31, 23, 59, 59),
-      },
     });
-    this.applicationCode = `APP-${year}-${String(count + 1).padStart(4, "0")}`;
+    this.applicationCode = `APP-${jobSuffix}-${String(count + 1).padStart(4, "0")}`;
   }
 
-  // 🔹 AUTO-CALCULATE TOTAL SCORE
-  const r = this.hrRating;
-  this.totalScore =
-    r.educationPoints +
-    r.trainingPoints +
-    r.experiencePoints +
-    r.performancePoints +
-    r.outstandingAccomplishments +
-    r.appEducationPoints +
-    r.appLearningPoints +
-    (r.potentialPoints?.writtenTest || 0) +
-    (r.potentialPoints?.bei || 0) +
-    (r.potentialPoints?.workSample || 0);
-
-  next();
+  if (this.hrRating) {
+    let sum = 0;
+    const recursiveSum = (obj) => {
+      for (const key in obj) {
+        if (typeof obj[key] === "number") {
+          sum += obj[key];
+        } else if (typeof obj[key] === "object" && obj[key] !== null) {
+          recursiveSum(obj[key]);
+        }
+      }
+    };
+    recursiveSum(this.hrRating);
+    this.totalScore = sum;
+  }
 });
 
 export default mongoose.model("Application", applicationSchema);

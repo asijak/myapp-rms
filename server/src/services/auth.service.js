@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import * as otpService from "./otp.service.js";
 
 export const registerUserLogic = async (userData) => {
-  const { email } = userData;
+  const { email, password, username } = userData;
   const { otp, expiresAt } = otpService.generateOTP();
   const hashedOtp = otpService.hashOTP(otp);
 
@@ -13,17 +13,25 @@ export const registerUserLogic = async (userData) => {
 
   const targetRole = await Role.findOne({ name: roleName });
   if (!targetRole) {
-    throw new Error(`System role '${roleName}' not found. Please seed the DB.`);
+    throw new Error(`Role '${roleName}' not found. Please seed the database.`);
   }
 
   let user = await User.findOne({ email });
+
   if (user) {
-    user.roles = [targetRole._id];
+    if (user.isVerified) {
+      throw new Error("An account with this email already exists. Please log in.");
+    }
+
+    // Unverified user: resend OTP only, do not overwrite password
     user.otp = { code: hashedOtp, expiresAt };
-    await user.save();
+    await user.save({ validateBeforeSave: false });
   } else {
+    // Only pass whitelisted fields to prevent mass assignment
     user = await User.create({
-      ...userData,
+      username,
+      email,
+      password,
       roles: [targetRole._id],
       otp: { code: hashedOtp, expiresAt },
     });
@@ -69,9 +77,6 @@ export const loginUserLogic = async (email, password) => {
   if (!user.isVerified) {
     throw new Error("Please verify your account via OTP first");
   }
-
-  user.lastLogin = new Date();
-  await user.save({ validateBeforeSave: false });
 
   return user;
 };

@@ -1,50 +1,227 @@
 import Application from "../models/Application.js";
+import Profile from "../models/Profile.js";
+import Job from "../models/Job.js";
 import catchAsync from "../utils/catchAsync.js";
+import AppError from "../utils/AppError.js";
+import { notifyStatusUpdate } from "../services/email.service.js";
+import { logAction } from "../services/audit.service.js";
 
-// 1. Submit Application
-export const applyToJob = catchAsync(async (req, res) => {
-  const { jobId, category, applicantData } = req.body;
+// ── 1. Submit Application (User) ────────────────────────────────────────────
+export const applyToJob = catchAsync(async (req, res, next) => {
+  const { jobId, category } = req.body;
 
-  // Check if already applied to this specific job
+  const job = await Job.findById(jobId);
+  if (!job) return next(new AppError("Job not found.", 404));
+  if (job.status !== "published") {
+    return next(new AppError("This vacancy is not accepting applications.", 400));
+  }
+
   const existing = await Application.findOne({
     submittedBy: req.user._id,
     submittedTo: jobId,
   });
-
   if (existing) {
-    return res
-      .status(400)
-      .json({ message: "You have already applied for this position." });
+    return next(new AppError("You have already applied for this position.", 400));
   }
+
+  let applicantData = req.body.applicantData || {};
+  
+  // ── Always Snapshot Personal Info from Profile for Integrity ─────────
+  const profile = await Profile.findOne({ user: req.user._id }).lean();
+  if (!profile) return next(new AppError("Please complete your PDS profile before applying.", 400));
+
+  applicantData.personalInfo = {
+    firstName:   profile.name?.firstName,
+    middleName:  profile.name?.middleName,
+    lastName:    profile.name?.lastName,
+    suffix:      profile.name?.suffix,
+    sex:         profile.sex,
+    birthDate:   profile.birthDate,
+    ethnicGroup: profile.ethnicGroup,
+    religion:    profile.religion,
+    disability:  profile.disability,
+    civilStatus: profile.civilStatus,
+    phones:      profile.contact?.phones || [],
+    emails:      profile.contact?.emails || [],
+    address:     profile.address,
+  };
+
+  // If other sections are missing from req.body (shouldn't happen with new UI, but for safety):
+  if (!applicantData.education)         applicantData.education = profile.education || [];
+  if (!applicantData.eligibility)       applicantData.eligibility = profile.eligibility || [];
+  if (!applicantData.experience)        applicantData.experience = profile.experience || [];
+  if (!applicantData.training)          applicantData.training = profile.training || [];
+  if (!applicantData.voluntaryWork)     applicantData.voluntaryWork = profile.voluntaryWork || [];
+  if (!applicantData.performanceRating) applicantData.performanceRating = profile.performanceRating || {};
 
   const newApplication = await Application.create({
     submittedBy: req.user._id,
     submittedTo: jobId,
     category,
-    applicantData, // Frontend sends the current Profile snapshot
+    applicantData,
   });
 
-  res.status(201).json({
-    status: "success",
-    data: newApplication,
+  await Job.findByIdAndUpdate(jobId, {
+    $addToSet: { applications: newApplication._id },
   });
+
+  res.status(201).json({ status: "success", data: newApplication });
 });
 
-// 2. Get My Applications (For the User Dashboard)
-export const getMyApplications = catchAsync(async (req, res) => {
+// ── 2. Get My Applications (User) ──────────────────────────────────────────
+export const getMyApplications = catchAsync(async (req, res, next) => {
   const applications = await Application.find({ submittedBy: req.user._id })
-    .populate("submittedTo", "title department") // Show job details
-    .sort("-createdAt");
+    .populate("submittedTo", "positionTitle positionCode placeOfAssignment hiringTrack status deadline salary salaryGrade")
+    .sort("-createdAt")
+    .lean();
 
-  res.status(200).json({ status: "success", data: applications });
+  // Alias submittedTo → job for frontend compatibility
+  const data = applications.map(app => ({
+    ...app,
+    job: app.submittedTo,
+  }));
+
+  res.status(200).json({ status: "success", data });
 });
 
-// 3. Get All Applications for a Job (For HR/Admin)
-export const getJobApplications = catchAsync(async (req, res) => {
+// ── 3. Get All Applications for a Job (Admin) ──────────────────────────────
+export const getJobApplications = catchAsync(async (req, res, next) => {
   const { jobId } = req.params;
   const applications = await Application.find({ submittedTo: jobId })
-    .populate("submittedBy", "username email avatar")
-    .sort("-totalScore"); // Rank by score for DepEd MSP
+    .populate("submittedBy", "username email avatarUrl")
+    .sort("-totalScore");
 
   res.status(200).json({ status: "success", data: applications });
+});
+
+// ── 4. Get Single Application (Admin) ─────────────────────────────────────
+export const getApplicationById = catchAsync(async (req, res, next) => {
+  const application = await Application.findById(req.params.id)
+    .populate("submittedBy", "username email avatarUrl")
+    .populate("submittedTo");
+
+  if (!application) return next(new AppError("Application not found.", 404));
+
+  res.status(200).json({ status: "success", data: application });
+});
+
+// ── 5. Update Applicant Data (User) ────────────────────────────────────────
+export const updateApplicantData = catchAsync(async (req, res, next) => {
+  const application = await Application.findById(req.params.id);
+  if (!application) return next(new AppError("Application not found.", 404));
+
+  if (application.submittedBy.toString() !== req.user._id.toString()) {
+    return next(new AppError("Not authorized.", 403));
+  }
+  if (application.isVerified) {
+    return next(new AppError("This application has been verified and can no longer be edited.", 400));
+  }
+
+  const { applicantData } = req.body;
+  if (!applicantData) return next(new AppError("No applicantData provided.", 400));
+
+  application.applicantData = applicantData;
+  await application.save();
+
+  res.status(200).json({ status: "success", data: application });
+});
+
+// ── 6. Update HR Rating (Admin — draft save, no finalize) ──────────────────
+export const updateHrRating = catchAsync(async (req, res, next) => {
+  const { hrRating } = req.body;
+  const application = await Application.findById(req.params.id);
+
+  if (!application) return next(new AppError("Application not found.", 404));
+
+  application.hrRating = { ...application.hrRating, ...hrRating };
+  await application.save();
+
+  res.status(200).json({ status: "success", data: application });
+});
+
+// ── 7. Update Application Status (Admin) ───────────────────────────────────
+export const updateApplicationStatus = catchAsync(async (req, res, next) => {
+  const { status, isQualified, disqualificationReason, isVerified, verificationChecklist } = req.body;
+
+  const application = await Application.findById(req.params.id)
+    .populate("submittedBy")
+    .populate("submittedTo");
+
+  if (!application) return next(new AppError("Application not found.", 404));
+
+  const oldData = application.toObject();
+  const oldStatus = application.status;
+
+  if (status !== undefined) application.status = status;
+  if (isQualified !== undefined) application.isQualified = isQualified;
+  if (disqualificationReason !== undefined) application.disqualificationReason = disqualificationReason;
+  if (verificationChecklist !== undefined) application.verificationChecklist = verificationChecklist;
+
+  if (isVerified === true && !application.isVerified) {
+    application.isVerified = true;
+    application.verifiedAt = new Date();
+    application.verifiedBy = req.user._id;
+    if (["applied", "verifying"].includes(application.status)) {
+      application.status = "comparative_assessment";
+    }
+  }
+
+  await application.save();
+
+  logAction({
+    req,
+    action: "APPLICATION_UPDATE",
+    entityModel: "Application",
+    entityId: application._id,
+    before: oldData,
+    after: application.toObject(),
+    description: `Updated status for ${application.submittedBy.username}`
+  });
+
+  if (application.status !== oldStatus) {
+    notifyStatusUpdate({
+      user: application.submittedBy,
+      application: application,
+      oldStatus: oldStatus,
+      newStatus: application.status,
+      jobTitle: application.submittedTo.positionTitle
+    });
+  }
+
+  res.status(200).json({ status: "success", data: application });
+});
+
+// ── 8. Evaluate/Rate Application (Admin) ───────────────────────────────────
+export const evaluateApplication = catchAsync(async (req, res, next) => {
+  const { hrRating, finalize } = req.body;
+  const application = await Application.findById(req.params.id)
+    .populate("submittedBy")
+    .populate("submittedTo");
+
+  if (!application) return next(new AppError("Application not found.", 404));
+
+  const oldStatus = application.status;
+
+  if (hrRating) {
+    application.hrRating = { ...application.hrRating, ...hrRating };
+  }
+
+  if (finalize) {
+    application.isEvaluated = true;
+    application.status = "ranked";
+  }
+
+  await application.save();
+
+  if (finalize && application.status !== oldStatus) {
+    notifyStatusUpdate({
+      user: application.submittedBy,
+      application: application,
+      oldStatus: oldStatus,
+      newStatus: application.status,
+      jobTitle: application.submittedTo?.positionTitle || "Position"
+    });
+  }
+
+  res.status(200).json({ status: "success", data: application });
 });

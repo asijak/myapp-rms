@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema(
     passwordResetExpires: Date,
     lastLogin: Date,
     passwordChangedAt: Date,
+    bio: { type: String, maxlength: 240 },
+    links: {
+      facebook: { type: String, trim: true },
+      linkedin: { type: String, trim: true },
+      twitter:  { type: String, trim: true },
+    },
   },
   {
     timestamps: true,
@@ -59,7 +65,6 @@ userSchema.virtual("avatarUrl").get(function () {
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   if (!this.password) return;
 
   this.password = await bcrypt.hash(this.password, 12);
@@ -100,7 +105,7 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
-userSchema.pre("findOneAndDelete", async function (next) {
+userSchema.pre("findOneAndDelete", async function () {
   const query = this.getQuery();
   const user = await this.model.findOne(query);
 
@@ -109,10 +114,7 @@ userSchema.pre("findOneAndDelete", async function (next) {
     (user.username === "super_admin" ||
       user.email === "superadmin@deped.gov.ph")
   ) {
-    throw new Error(
-      "This is a protected system account and cannot be deleted.",
-    );
+    throw new Error("This is a protected system account and cannot be deleted.");
   }
-  next();
 });
 export default mongoose.model("User", userSchema);
