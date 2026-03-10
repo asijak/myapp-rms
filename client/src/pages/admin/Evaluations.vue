@@ -154,6 +154,17 @@ const fullName = (app) => {
   return [p.firstName, p.middleName, p.lastName, p.suffix].filter(Boolean).join(' ')
 }
 
+const getPlaceName = (place) => {
+  if (!place) return 'No Station'
+  if (Array.isArray(place)) {
+    return place.map(p => typeof p === 'object' ? p.name : p).filter(Boolean).join(', ')
+  }
+  if (typeof place === 'object') return place.name || 'No Station'
+  return place
+}
+
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
+
 watch(selectedJobId, () => {
   loadApplications()
 })
@@ -176,15 +187,18 @@ const isLocked = computed(() => selectedApp.value?.status === 'ranked' || select
         </div>
         <div class="flex-1 min-w-0">
           <p v-if="selectedJob" class="text-xs font-bold text-[var(--text-main)] truncate uppercase tracking-tight">{{ selectedJob.positionTitle }}</p>
+          <p v-if="selectedJob" class="text-[10px] text-[var(--text-muted)] font-mono truncate">{{ selectedJob.positionCode }} &bull; {{ getPlaceName(selectedJob.placeOfAssignment) }}</p>
           <p v-else class="text-xs font-semibold text-[var(--text-faint)]">Select a vacancy to begin assessment...</p>
         </div>
         <i class="pi pi-chevron-down text-[10px] text-[var(--text-faint)] group-hover:text-[var(--color-primary)] transition-colors"></i>
       </button>
 
-      <div v-if="selectedJobId" class="relative w-full lg:w-64">
-        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs"></i>
+      <div v-if="selectedJobId" class="relative w-full lg:w-64 group">
+        <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none group-focus-within:text-[var(--color-primary)] transition-colors z-10"></i>
         <input v-model="searchQuery" type="search" placeholder="Search..."
-          class="w-full h-10 pl-9 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 transition-all" />
+          class="w-full h-10 pl-10 pr-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-main)] text-sm font-bold uppercase tracking-tight
+                 text-[var(--text-main)] placeholder:text-[var(--text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 
+                 focus:border-[var(--color-primary)] transition-all" />
       </div>
     </div>
 
@@ -299,17 +313,97 @@ const isLocked = computed(() => selectedApp.value?.status === 'ranked' || select
       </div>
     </AppDrawer>
 
-    <!-- Job Picker -->
-    <AppModal v-model="showJobPicker" title="Select Assessment Vacancy" width="max-w-2xl">
-      <div class="space-y-4">
-        <AppInput v-model="jobPickerSearch" placeholder="Filter positions..." prefixIcon="pi-search" />
-        <div class="max-h-[400px] overflow-y-auto custom-scrollbar space-y-2">
-          <button v-for="job in filteredJobs" :key="job._id" @click="selectJob(job._id)"
-            class="w-full p-4 rounded-xl border border-[var(--border-main)] bg-[var(--surface)] hover:border-[var(--color-primary)] text-left transition-all group">
-            <span class="text-[9px] font-black text-[var(--color-primary)] uppercase tracking-widest">{{ job.hiringTrack.replace('_', ' ') }}</span>
-            <h4 class="text-sm font-bold text-[var(--text-main)] uppercase mt-1 group-hover:text-[var(--color-primary)] transition-colors">{{ job.positionTitle }}</h4>
-            <p class="text-[10px] text-[var(--text-muted)] font-medium mt-0.5">{{ job.positionCode }} &bull; {{ job.placeOfAssignment }}</p>
-          </button>
+    <!-- ── JOB PICKER MODAL (Refined) ────────────────────────────────────────── -->
+    <AppModal v-model="showJobPicker" title="Select Assessment Vacancy" icon="pi-briefcase" width="max-w-2xl">
+      <div class="flex flex-col gap-4">
+        <!-- Search bar -->
+        <div class="relative group">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none group-focus-within:text-[var(--color-primary)] transition-colors z-10"></i>
+          <input 
+            v-model="jobPickerSearch" 
+            placeholder="Search by position, code, or station..." 
+            class="w-full h-11 pl-10 pr-4 rounded-xl bg-[var(--bg-app)] border border-[var(--border-main)] text-sm font-bold uppercase tracking-tight
+                   text-[var(--text-main)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-ring)]/30 
+                   focus:border-[var(--color-primary)] transition-all"
+            autofocus
+          />
+        </div>
+
+        <!-- Vacancy List -->
+        <div class="max-h-[440px] overflow-y-auto pr-1 custom-scrollbar min-h-[320px] relative">
+          <div v-if="filteredJobs.length > 0" class="space-y-2 pb-4 px-0.5">
+            <button v-for="job in filteredJobs" :key="job._id" @click="selectJob(job._id)"
+              class="w-full p-4 rounded-2xl border transition-all text-left flex items-start justify-between gap-4 group relative overflow-hidden"
+              :class="selectedJobId === job._id
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]/20 shadow-sm ring-1 ring-[var(--color-primary-ring)]/20'
+                : 'border-[var(--border-main)] bg-[var(--surface)] hover:border-[var(--color-primary)] hover:bg-[var(--bg-app)]/40 hover:shadow-md'">
+              
+              <!-- Selection Indicator -->
+              <div v-if="selectedJobId === job._id" 
+                class="absolute top-0 right-0 w-8 h-8 bg-[var(--color-primary)] flex items-center justify-center rounded-bl-xl shadow-sm animate-fade-in">
+                <i class="pi pi-check text-white text-[10px] font-black"></i>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                  <span :class="['text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest',
+                    job.hiringTrack === 'teaching' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                    job.hiringTrack === 'teaching_related' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                    'bg-slate-50 text-slate-600 border-slate-200']">
+                    {{ job.hiringTrack.replace('_', ' ') }}
+                  </span>
+                  <span class="text-[9px] text-[var(--text-faint)] font-bold uppercase tracking-tighter flex items-center gap-1">
+                    <i class="pi pi-calendar text-[8px]"></i> {{ formatDate(job.createdAt) }}
+                  </span>
+                </div>
+
+                <h4 class="text-sm font-black text-[var(--text-main)] truncate uppercase group-hover:text-[var(--color-primary)] transition-colors leading-tight tracking-tight">
+                  {{ job.positionTitle }}
+                </h4>
+                
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
+                  <div class="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                    <i class="pi pi-tag text-[9px]"></i>
+                    <span class="font-mono text-[var(--text-main)]">{{ job.positionCode }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                    <i class="pi pi-map-marker text-[9px]"></i>
+                    <span class="truncate max-w-[220px]">{{ getPlaceName(job.placeOfAssignment) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col items-end justify-between self-stretch flex-shrink-0 py-0.5">
+                <AppBadge :variant="job.status" size="sm" class="font-black uppercase tracking-widest text-[8px]">
+                  {{ job.status }}
+                </AppBadge>
+                
+                <div class="flex items-center gap-3">
+                  <div class="text-right">
+                    <p class="text-[8px] font-black text-[var(--text-faint)] uppercase leading-none mb-1">Qualified</p>
+                    <p class="text-xs font-black text-[var(--color-primary)] tabular-nums leading-none">{{ job.applications?.filter(a => a.isQualified).length || 0 }}</p>
+                  </div>
+                  <div class="w-px h-5 bg-[var(--border-main)]"></div>
+                  <div class="text-right">
+                    <p class="text-[8px] font-black text-[var(--text-faint)] uppercase leading-none mb-1">Slots</p>
+                    <p class="text-xs font-black text-[var(--text-main)] tabular-nums leading-none">{{ job.noOfVacancy || 0 }}</p>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <!-- No results state -->
+          <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+            <div class="w-14 h-14 rounded-2xl bg-[var(--bg-app)] border border-[var(--border-main)] flex items-center justify-center mb-4">
+              <i class="pi pi-search-minus text-2xl text-[var(--text-faint)]"></i>
+            </div>
+            <h5 class="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">No Vacancies Found</h5>
+            <p class="text-[11px] text-[var(--text-muted)] mt-1.5 max-w-[240px] font-medium leading-relaxed">
+              Try different keywords or browse all recruitment posts.
+            </p>
+            <AppButton variant="secondary" size="sm" class="mt-5" @click="jobPickerSearch = ''">Clear Search</AppButton>
+          </div>
         </div>
       </div>
     </AppModal>

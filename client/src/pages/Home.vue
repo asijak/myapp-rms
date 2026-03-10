@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
 
 import HomeBulletin from '@/components/Home/HomeBulletin.vue';
 import HomeJob from '@/components/Home/HomeJob.vue';
@@ -15,6 +16,7 @@ import HomeBulletinModal from '@/components/Modals/HomeBulletinModal.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 const loggedOutMessage = ref(false);
 
 const isModalOpen = ref(false);
@@ -76,10 +78,10 @@ const fetchWeather = async () => {
 
 // --- NATIVE HERO CAROUSEL LOGIC ---
 const activeHeroSlide = ref(0);
-const heroSlides = [
+const heroSlides = computed(() => [
     { 
-        tag: 'Division of Guihulngan City', 
-        title: 'RSP Management Portal.', 
+        tag: settingsStore.copyrightText, 
+        title: `${settingsStore.systemName} Management Portal.`, 
         desc: 'Streamlined online recruitment and selection framework designed for human resource efficiency.' 
     },
     { 
@@ -90,9 +92,9 @@ const heroSlides = [
     { 
         tag: 'Modernized Systems', 
         title: 'Future-Ready Careers.', 
-        desc: 'Join our dedicated team of educators and administrative professionals in the DepEd community.' 
+        desc: `Join our dedicated team of educators and professionals in the ${settingsStore.systemName} community.` 
     }
-];
+]);
 let heroInterval;
 
 const startHeroCarousel = () => {
@@ -153,10 +155,13 @@ onUnmounted(() => {
 
         <nav class="flex items-center justify-between px-8 py-5 bg-[var(--surface)] border-b border-[var(--border-main)] sticky top-0 z-[100]">
             <div class="flex items-center gap-4 w-1/4 group cursor-pointer" @click="scrollTo('home')">
-                <img src="https://i.ibb.co/7dHhWCpp/images.png" alt="Logo" class="object-contain w-10 h-10" />
+                <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:border-[var(--color-primary)] transition-colors">
+                    <img v-if="settingsStore.resolvedLogoUrl" :src="settingsStore.resolvedLogoUrl" alt="Logo" class="w-full h-full object-cover" />
+                    <img v-else src="https://i.ibb.co/7dHhWCpp/images.png" alt="Logo" class="w-full h-full object-contain p-1" />
+                </div>
                 <div class="flex flex-col leading-none">
-                    <span class="text-lg font-bold text-[var(--text-main)] tracking-tight">RSP Portal</span>
-                    <span class="text-[10px] text-[var(--text-muted)] uppercase font-semibold tracking-widest mt-1">DepEd GNC</span>
+                    <span class="text-lg font-bold text-[var(--text-main)] tracking-tight">{{ settingsStore.systemName }}</span>
+                    <span class="text-[10px] text-[var(--text-muted)] uppercase font-semibold tracking-widest mt-1">{{ settingsStore.systemSubName }}</span>
                 </div>
             </div>
 

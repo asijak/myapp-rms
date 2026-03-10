@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
     isCollapsed: Boolean,
@@ -11,14 +12,15 @@ const props = defineProps({
 const emit = defineEmits(['update:isHovered'])
 
 const route = useRoute()
-const authStore = useAuthStore()
+const authStore     = useAuthStore()
+const settingsStore = useSettingsStore()
 
 // ── Navigation Groups ────────────────────────────────────────────────────
 const navigationGroups = [
     {
         title: 'Overview',
         items: [
-            { label: 'Dashboard',       icon: 'pi-home',         to: '/admin/dashboard',  perm: null },
+            { label: 'Dashboard',       icon: 'pi-home',         to: '/admin/dashboard',  perm: 'dash_view' },
         ]
     },
     {
@@ -35,11 +37,11 @@ const navigationGroups = [
     {
         title: 'Administration',
         items: [
-            { label: 'Announcements',   icon: 'pi-megaphone',    to: '/admin/announcements',     perm: null },
+            { label: 'Announcements',   icon: 'pi-megaphone',    to: '/admin/announcements',     perm: 'ann_manage' },
             { label: 'User Accounts',   icon: 'pi-user-plus',    to: '/admin/user-list',         perm: 'user_manage' },
             { label: 'Roles & Perms',   icon: 'pi-shield',       to: '/admin/roles-permissions', perm: 'role_manage' },
-            { label: 'Audit Logs',      icon: 'pi-history',      to: '/admin/audit-logs',        perm: 'user_manage' },
-            { label: 'Settings',        icon: 'pi-cog',          to: '/admin/settings',          perm: null },
+            { label: 'Audit Logs',      icon: 'pi-history',      to: '/admin/audit-logs',        perm: 'audit_view' },
+            { label: 'Settings',        icon: 'pi-cog',          to: '/admin/settings',          perm: 'set_manage' },
         ]
     },
 ]
@@ -66,14 +68,17 @@ const isActive = (path) => route.path.startsWith(path)
         <!-- Brand Header -->
         <div class="h-16 flex items-center px-4 shrink-0 gap-3"
              style="border-bottom: 1px solid rgba(255,255,255,0.07);">
-            <div class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center shadow-lg"
-                 style="background: linear-gradient(135deg, #5B84BA 0%, #4A4D8F 100%); box-shadow: 0 4px 12px rgba(91,132,186,0.35);">
-                <i class="pi pi-shield text-white text-sm"></i>
+            <div class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center shadow-lg overflow-hidden"
+                 :style="settingsStore.resolvedLogoUrl ? '' : 'background: linear-gradient(135deg, #5B84BA 0%, #4A4D8F 100%); box-shadow: 0 4px 12px rgba(91,132,186,0.35);'">
+                <img v-if="settingsStore.resolvedLogoUrl"
+                     :src="settingsStore.resolvedLogoUrl"
+                     class="w-full h-full object-cover" />
+                <i v-else class="pi pi-shield text-white text-sm"></i>
             </div>
             <transition name="fade">
                 <div v-if="!isCollapsed || isHovered" class="overflow-hidden whitespace-nowrap">
-                    <h1 class="text-sm font-black leading-none tracking-tight" style="color: #ffffff;">RSP Portal</h1>
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] mt-0.5" style="color: rgba(255,255,255,0.35);">Admin Console</p>
+                    <h1 class="text-sm font-black leading-none tracking-tight" style="color: #ffffff;">{{ settingsStore.systemName }}</h1>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] mt-0.5" style="color: rgba(255,255,255,0.35);">{{ settingsStore.systemSubName }}</p>
                 </div>
             </transition>
         </div>

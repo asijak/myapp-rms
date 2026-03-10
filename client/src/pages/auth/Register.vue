@@ -2,8 +2,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/api/axios';
+import { useSettingsStore } from '@/stores/settings';
 
 const router = useRouter();
+const settingsStore = useSettingsStore();
 const form = ref({ username: '', email: '', password: '' });
 const loading = ref(false);
 const error = ref('');
@@ -39,14 +41,16 @@ const handleRegister = async () => {
             <div class="p-8 sm:p-10">
                 <div class="mb-8 text-center">
                     <div
-                        class="mx-auto mb-5 w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-md">
-                        <i class="pi pi-user-plus text-white text-lg"></i>
+                        class="mx-auto mb-5 w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md"
+                        :class="settingsStore.resolvedLogoUrl ? '' : 'bg-[var(--color-primary)]'">
+                        <img v-if="settingsStore.resolvedLogoUrl" :src="settingsStore.resolvedLogoUrl" class="w-full h-full object-cover" />
+                        <i v-else class="pi pi-user-plus text-white text-lg"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight">
-                        Create an account
+                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight uppercase tracking-widest">
+                        Create Account
                     </h2>
-                    <p class="text-sm text-[var(--text-muted)] mt-1.5">
-                        Join the DepEd GNC talent pool
+                    <p class="text-[10px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-[0.2em]">
+                        {{ settingsStore.systemName }} &bull; {{ settingsStore.systemSubName }}
                     </p>
                 </div>
 

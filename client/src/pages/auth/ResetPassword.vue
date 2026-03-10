@@ -2,9 +2,11 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/api/axios';
+import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
 const router = useRouter();
+const settingsStore = useSettingsStore();
 
 const token = route.params.token;
 const form = ref({ password: '', confirmPassword: '' });
@@ -48,14 +50,16 @@ const handleSubmit = async () => {
             <div class="p-8 sm:p-10">
                 <div class="mb-8 text-center">
                     <div
-                        class="mx-auto mb-5 w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-md">
-                        <i class="pi pi-key text-white text-lg"></i>
+                        class="mx-auto mb-5 w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md"
+                        :class="settingsStore.resolvedLogoUrl ? '' : 'bg-[var(--color-primary)]'">
+                        <img v-if="settingsStore.resolvedLogoUrl" :src="settingsStore.resolvedLogoUrl" class="w-full h-full object-cover" />
+                        <i v-else class="pi pi-key text-white text-lg"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight">
-                        Set a new password
+                    <h2 class="text-xl font-bold text-[var(--text-main)] tracking-tight uppercase tracking-widest">
+                        New Password
                     </h2>
-                    <p class="text-sm text-[var(--text-muted)] mt-1.5">
-                        Choose a strong password for your account.
+                    <p class="text-[10px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-[0.2em]">
+                        {{ settingsStore.systemName }} &bull; {{ settingsStore.systemSubName }}
                     </p>
                 </div>
 

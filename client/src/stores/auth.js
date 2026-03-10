@@ -28,14 +28,19 @@ export const useAuthStore = defineStore('auth', {
     can: (state) => (permission) => {
       if (!state.user) return false
       // Super admin bypasses all checks
-      const isSuperAdmin = state.user.roles?.some((r) =>
-        (typeof r === 'object' ? r.name : r)?.toLowerCase().includes('super'),
-      )
+      const isSuperAdmin = state.user.roles?.some((r) => {
+        const name = (typeof r === 'object' ? r.name : r)?.toLowerCase()
+        return name?.includes('super')
+      })
       if (isSuperAdmin) return true
-      // Check flattened permissions from populated roles
-      const perms =
+
+      // Check both flattened permissions array and individual roles
+      const topLevelPerms = state.user.permissions ?? []
+      const rolePerms =
         state.user.roles?.flatMap((r) => (typeof r === 'object' ? (r.permissions ?? []) : [])) ?? []
-      return perms.includes(permission) || perms.includes('all')
+
+      const allPerms = [...new Set([...topLevelPerms, ...rolePerms])]
+      return allPerms.includes(permission) || allPerms.includes('all')
     },
   },
 

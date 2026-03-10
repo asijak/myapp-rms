@@ -1,15 +1,15 @@
 import express from "express";
 import * as analyticsController from "../controllers/analytics.controller.js";
-import { protect, restrictTo } from "../middlewares/auth.middleware.js";
+import { protect, restrictTo, requirePermission } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 router.use(protect);
-router.use(restrictTo("admin", "hr")); // Restricted to HR and Admin roles
 
-router.get("/overview", analyticsController.getOverview);
-router.get("/trends", analyticsController.getTrends);
-router.get("/demographics", analyticsController.getDemographics);
-router.get("/efficiency", analyticsController.getEfficiency);
+router.get("/dashboard", requirePermission("dash_view"), analyticsController.getDashboard);
+router.get("/overview", requirePermission("dash_view"), analyticsController.getOverview);
+router.get("/trends", requirePermission("dash_view"), analyticsController.getTrends);
+router.get("/demographics", requirePermission("dash_view"), analyticsController.getDemographics);
+router.get("/efficiency", requirePermission("dash_view"), analyticsController.getEfficiency);
 
 export default router;

@@ -12,10 +12,10 @@ router.get("/my-applications", appController.getMyApplications);
 router.patch("/:id/applicant-data", appController.updateApplicantData);
 
 // Admin routes
-router.get("/job/:jobId", requirePermission("application_view"), appController.getJobApplications);
-router.get("/:id", requirePermission("application_view"), appController.getApplicationById);
-router.patch("/:id/rating",   requirePermission("application_manage"), appController.updateHrRating);
-router.patch("/:id/evaluate", requirePermission("application_manage"), appController.evaluateApplication);
-router.patch("/:id/status",   requirePermission("application_manage"), appController.updateApplicationStatus);
+router.get("/job/:jobId", requirePermission("app_view"), appController.getJobApplications);
+router.get("/:id", requirePermission("app_view"), appController.getApplicationById);
+router.patch("/:id/rating",   requirePermission("eval_score"), appController.updateHrRating);
+router.patch("/:id/evaluate", requirePermission("eval_score"), appController.evaluateApplication);
+router.patch("/:id/status",   requirePermission("app_verify"), appController.updateApplicationStatus);
 
 export default router;

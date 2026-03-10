@@ -181,7 +181,7 @@ const handleDelete = async (id) => {
                 </div>
                 <div>
                     <label class="field-label block mb-1.5">Content</label>
-                    <AppTextarea v-model="form.content" rows="5" placeholder="Write your announcement here..." required />
+                    <AppTextarea v-model="form.content" :rows="5" placeholder="Write your announcement here..." required />
                 </div>
                 <div class="flex items-center gap-3 p-4 bg-[var(--bg-app)] rounded-xl border border-[var(--border-main)]">
                     <input type="checkbox" :checked="form.status === 'published'" @change="form.status = $event.target.checked ? 'published' : 'draft'"

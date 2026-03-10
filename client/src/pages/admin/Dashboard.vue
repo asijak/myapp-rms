@@ -58,10 +58,9 @@ const quickActions = [
             </div>
         </section>
 
-        <!-- 2. Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard title="Active Postings"   :value="metrics.totalJobs"         icon="briefcase" iconColor="blue"    :loading="loading" />
-            <StatCard title="Total Candidates"  :value="metrics.totalApplications"  icon="users"     iconColor="purple"  :loading="loading" trend="8" />
+            <StatCard title="Total Candidates"  :value="metrics.totalApplications"  icon="users"     iconColor="purple"  :loading="loading" :trend="8" />
             <StatCard title="Finalized RQA"     :value="metrics.finalizedRQA"       icon="verified"  iconColor="emerald" :loading="loading" />
             <StatCard title="System Users"      :value="metrics.totalUsers"         icon="shield"    iconColor="gold"    :loading="loading" description="Registered accounts" />
         </div>
